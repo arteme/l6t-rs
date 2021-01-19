@@ -8,6 +8,7 @@ use crate::bytecast;
 use std::borrow::Borrow;
 use std::num::ParseIntError;
 use std::io;
+use std::collections::HashMap;
 
 pub struct Reader<R: Read> {
     reader: R,
@@ -17,6 +18,12 @@ pub struct Reader<R: Read> {
 impl<R: Read> Reader<R> {
     pub fn new(reader: R, little_endian: bool) -> Self {
         Reader { reader, little_endian }
+    }
+
+    pub fn read_u8(&mut self) -> Result<u8, io::Error> {
+        let mut v = [0u8; 1];
+        self.reader.read_exact(&mut v)?;
+        Ok(v[0])
     }
 
     pub fn read_u32(&mut self) -> Result<u32, io::Error> {
@@ -29,7 +36,7 @@ impl<R: Read> Reader<R> {
     }
 
     pub fn read_utf(&mut self, len: usize) -> Result<String, io::Error> {
-        let mut vec: Vec<u16> = vec![0; len];
+        let mut vec: Vec<u16> = vec![0; len / 2];
         let mut arr = bytecast::u16_as_ne_mut_bytes(vec.as_mut_slice());
         self.reader.read_exact(&mut arr)?;
 
@@ -54,31 +61,26 @@ impl<R: Read> Reader<R> {
     }
 }
 
-
-
-
-//#[derive(Debug)]
-pub struct Decoder {
-    little_endian: bool
+fn reader_for_slice(slice: &[u8], little_endian: bool) -> Reader<Cursor<&[u8]>> {
+    Reader::new(Cursor::new(slice), little_endian)
 }
 
+pub struct Decoder {}
+
 impl Decoder {
-    pub fn new() -> Self {
-        Decoder {
-            little_endian: false
-        }
-    }
-    pub fn read(&mut self, data: &[u8]) -> Result<L6Patch, io::Error> {
+    pub fn read(data: &[u8]) -> Result<L6Patch, io::Error> {
         let chunk = iff::Chunk::new(data, None).unwrap();
 
         if chunk.has_envelope_type(types::FORM, types::L6PA) {
             // L6T patch file
             let mut patch: L6Patch = Default::default();
+            let little_endian = false;
 
             for (type_id, chunk) in chunk.all_chunks() {
                 match type_id {
-                    types::UNFO => { patch.meta = decode_meta_tags(chunk).unwrap(); },
-                    types::PINF => { patch.target_device = read_target_device(chunk, self.little_endian)?; },
+                    types::PATC => { patch.models = read_models(chunk)?; },
+                    types::UNFO => { patch.meta = read_meta_tags(chunk)?; },
+                    types::PINF => { patch.target_device = read_target_device(chunk, little_endian)?; },
                     _ => {}
                 }
             }
@@ -86,16 +88,6 @@ impl Decoder {
         }
 
         Err(io::Error::new(io::ErrorKind::InvalidInput, "cannot parse file"))
-    }
-
-    fn read_u32(&self, data: &[u8]) -> u32 {
-        // SAFETY: ok because caller checks the length
-        let arr = array_ref![data, 0, 4];
-        if self.little_endian {
-            u32::from_le_bytes(*arr) as u32
-        } else {
-            u32::from_be_bytes(*arr) as u32
-        }
     }
 }
 
@@ -159,29 +151,28 @@ fn encode_meta_tags(tags: &MetaTags) -> Chunk {
     c
 }
 
-fn decode_meta_tags(chunk: &Chunk) -> Option<MetaTags> {
-    if !chunk.has_envelope_type(types::LIST, types::UNFO) { return None }
-
+fn read_meta_tags(chunk: &Chunk) -> Result<MetaTags, io::Error> {
     let mut tags: MetaTags = Default::default();
     for (type_id, data) in chunk.data_chunks() {
+        let mut r = reader_for_slice(data, chunk.is_little_endian());
         match type_id {
-            types::IAUT => tags.author = decode_utf(data),
-            types::IGTR => tags.guitarist = decode_utf(data),
-            types::IBND => tags.band = decode_utf(data),
-            types::ISNG => tags.song = decode_utf(data),
-            types::ISTL => tags.style = decode_utf(data),
-            types::IPUS => tags.pickup_style = decode_utf(data),
-            types::IPUP => tags.pickup_position = decode_utf(data),
-            types::IDAT => tags.date = decode_date(data),
-            types::IAMP => tags.amp_name = decode_utf(data),
-            types::IAPP => tags.creator_app = decode_utf(data),
-            types::IAPV => tags.creator_app_version = decode_utf(data),
-            types::ICMT => tags.comments = decode_utf(data),
+            types::IAUT => tags.author = r.read_utf(data.len())?,
+            types::IGTR => tags.guitarist = r.read_utf(data.len())?,
+            types::IBND => tags.band = r.read_utf(data.len())?,
+            types::ISNG => tags.song = r.read_utf(data.len())?,
+            types::ISTL => tags.style = r.read_utf(data.len())?,
+            types::IPUS => tags.pickup_style = r.read_utf(data.len())?,
+            types::IPUP => tags.pickup_position = r.read_utf(data.len())?,
+            types::IDAT => tags.date = decode_date(r.read_utf(data.len())?.as_ref()),
+            types::IAMP => tags.amp_name = r.read_utf(data.len())?,
+            types::IAPP => tags.creator_app = r.read_utf(data.len())?,
+            types::IAPV => tags.creator_app_version = r.read_utf(data.len())?,
+            types::ICMT => tags.comments = r.read_utf(data.len())?,
             _ => {}
         }
     }
 
-    return Some(tags);
+    Ok(tags)
 }
 
 fn read_target_device(chunk: &Chunk, little_endian: bool) -> Result<TargetDevice, io::Error> {
@@ -190,10 +181,9 @@ fn read_target_device(chunk: &Chunk, little_endian: bool) -> Result<TargetDevice
         _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Data chunk expected"))
     };
 
-    println!("{}", data.len());
     if data.len() != 76 { return Err(io::Error::new(io::ErrorKind::InvalidInput, "Incorrect chunk length")); }
 
-    let mut r = Reader::new(Cursor::new(data), little_endian);
+    let mut r = reader_for_slice(data, little_endian);
     if r.read_u32()? != 1 {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "Incorrect PINF version"))
     }
@@ -203,3 +193,62 @@ fn read_target_device(chunk: &Chunk, little_endian: bool) -> Result<TargetDevice
     Ok(TargetDevice { midi_id, name, version })
 }
 
+fn read_models(chunk: &Chunk) -> Result<HashMap<u32, Model>, io::Error> {
+    let chunks = match chunk {
+        Chunk::Envelope { ref chunks, .. } => chunks,
+        Chunk::Data { .. } => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Container chunk expected"))
+    };
+
+    let mut models: HashMap<u32, Model> = HashMap::new();
+
+    for chunk in chunks {
+        if chunk.has_envelope_type(types::LIST, types::MODL) {
+            let model = read_model(chunk)?;
+            models.insert(model.slot_id, model);
+        }
+    }
+
+    Ok(models)
+}
+
+
+fn read_model(chunk: &Chunk) -> Result<Model, io::Error> {
+    let mut model: Model = Default::default();
+    let mut params: Vec<ModelParam> = vec![];
+    let little_endian= chunk.is_little_endian();
+
+    for (type_id, chunk) in chunk.data_chunks() {
+        match type_id {
+            types::MINF => model = read_model_info(chunk, little_endian)?,
+            types::PARM => params.push(read_model_param(chunk, little_endian)?),
+            _ => {}
+        }
+    }
+    model.params.extend(params);
+
+    Ok(model)
+}
+
+fn read_model_info(data: &[u8], little_endian: bool) -> Result<Model, io::Error> {
+    let mut r = reader_for_slice(data, little_endian);
+    let mut model: Model = Default::default();
+
+    model.model_id = r.read_u32()?;
+    model.slot_id = r.read_u32()?;
+    model.ordinal = r.read_u8()?;
+    r.read_u8()?;
+    r.read_u8()?;
+    model.enabled = r.read_u8()? > 0;
+
+    Ok(model)
+}
+fn read_model_param(data: &[u8], little_endian: bool) -> Result<ModelParam, io::Error> {
+    let mut r = reader_for_slice(data, little_endian);
+    let mut param: ModelParam = Default::default();
+
+    param.param_id = r.read_u32()? & 0x00ffffff;
+    param.value_type = r.read_u32()?.into();
+    param.value = r.read_u32()?;
+
+    Ok(param)
+}

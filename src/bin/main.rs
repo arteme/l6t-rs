@@ -28,31 +28,6 @@ fn main() {
     let chunk = Chunk::new(v.as_slice(), None).unwrap();
     dump_chunk(&chunk, 0);
 
-    let patch = Decoder::new().read(v.as_slice());
+    let patch = Decoder::read(v.as_slice());
     println!("{:?}", patch);
-
-    /*
-    for chunk in d {
-        println!("{:?} len {}", chunk.0, chunk.1.len());
-        for x in chunk.1.iter() {
-            print!("{:02x} ", x);
-        }
-        println!("");
-
-        /*
-        if &chunk.0 == MROF {
-
-            let mut c = Cursor::new(&chunk.1);
-            c.set_position(1);
-            let box_: Box<dyn Read + 'a> = Box::new(c);
-            let d = Decoder::new(box_);
-            for chunk in d {
-                println!("{:?} len {}", chunk.0, chunk.1.len());
-            }
-        }
-
-         */
-    }
-
-     */
 }

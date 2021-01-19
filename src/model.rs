@@ -1,8 +1,32 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub struct TargetDevice {
     pub midi_id: u32,
     pub name: String,
     pub version: u32
+}
+
+#[derive(Debug)]
+pub struct Model {
+    pub model_id: u32,
+    pub slot_id: u32,
+    pub enabled: bool,
+    pub ordinal: u8,
+    pub params: Vec<ModelParam>
+}
+
+#[derive(Debug)]
+pub struct ModelParam {
+    pub param_id: u32,
+    pub value_type: ValueType,
+    pub value: u32
+}
+
+#[derive(Debug)]
+pub enum ValueType {
+    Int = 0,
+    Float = 1
 }
 
 #[derive(Debug)]
@@ -24,6 +48,7 @@ pub struct MetaTags {
 #[derive(Debug)]
 pub struct L6Patch {
     pub target_device: TargetDevice,
+    pub models: HashMap<u32, Model>,
     pub meta: MetaTags
 }
 
@@ -60,8 +85,40 @@ impl Default for L6Patch {
     fn default() -> Self {
         L6Patch {
             target_device: Default::default(),
+            models: Default::default(),
             meta: Default::default()
         }
+    }
+}
 
+impl Default for Model {
+    fn default() -> Self {
+        Model {
+            model_id: 0,
+            slot_id: 0,
+            enabled: false,
+            ordinal: 0,
+            params: vec![]
+        }
+    }
+}
+
+impl Default for ModelParam {
+    fn default() -> Self {
+        ModelParam {
+            param_id: 0,
+            value_type: 0.into(),
+            value: 0
+        }
+    }
+}
+
+impl From<u32> for ValueType {
+    fn from(v: u32) -> Self {
+        match v {
+            0 => ValueType::Int,
+            1 => ValueType::Float,
+            _ => panic!("Unknown value: {}", v)
+        }
     }
 }

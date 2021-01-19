@@ -55,41 +55,41 @@ impl<'a> From<&'a [u8; 4]> for TypeID {
     }
 }
 
-type_id!(L6BA, b"L6BA");
-type_id!(L6CO, b"L6CO");
-type_id!(L6PA, b"L6PA");
-type_id!(L6TE, b"L6TE");
-type_id!(L6AS, b"L6AS");
-type_id!(L6FS, b"L6FS");
-type_id!(HEAD, b"HEAD");
-type_id!(BANK, b"BANK");
-type_id!(FLDR, b"FLDR");
-type_id!(BINF, b"BINF");
-type_id!(PINF, b"PINF");
-type_id!(MINF, b"MINF");
-type_id!(MODL, b"MODL");
-type_id!(PARM, b"LARM");
-type_id!(PATC, b"PATC");
-type_id!(UNFO, b"UNFO");
-type_id!(INFO, b"INFO");
-type_id!(META, b"META");
-type_id!(TUNE, b"TUNE");
-type_id!(TN12, b"TN12");
-type_id!(TNAC, b"TNAC");
-type_id!(TNGS, b"TNGS");
-type_id!(TNG2, b"TNG2");
-type_id!(PKPS, b"PKPS");
-type_id!(PKP_, b"PKP_");
-type_id!(L6GP, b"L6GP");
-type_id!(TONE, b"TONE");
-type_id!(AMP_, b"AMP_");
-type_id!(CAB_, b"CAB_");
-type_id!(PRFX, b"PRFX");
-type_id!(EFX_, b"EFX_");
-type_id!(SSLB, b"SSLB");
-type_id!(LHDR, b"LHDR");
-type_id!(WSEQ, b"WSEQ");
-type_id!(LENT, b"LENT");
+type_id!(L6BA);
+type_id!(L6CO);
+type_id!(L6PA);
+type_id!(L6TE);
+type_id!(L6AS);
+type_id!(L6FS);
+type_id!(HEAD);
+type_id!(BANK);
+type_id!(FLDR);
+type_id!(BINF);
+type_id!(PINF);
+type_id!(MINF);
+type_id!(MODL);
+type_id!(PARM);
+type_id!(PATC);
+type_id!(UNFO);
+type_id!(INFO);
+type_id!(META);
+type_id!(TUNE);
+type_id!(TN12);
+type_id!(TNAC);
+type_id!(TNGS);
+type_id!(TNG2);
+type_id!(PKPS);
+type_id!(PKP_);
+type_id!(L6GP);
+type_id!(TONE);
+type_id!(AMP_);
+type_id!(CAB_);
+type_id!(PRFX);
+type_id!(EFX_);
+type_id!(SSLB);
+type_id!(LHDR);
+type_id!(WSEQ);
+type_id!(LENT);
 
 pub const UNALIGNED_CHUNKS: &[&TypeID] = &[ &SSLB ];
 pub const PATCH_IDS: &[&TypeID] = &[ &L6PA, &L6AS, &L6FS, &L6TE, &L6GP ];
@@ -107,20 +107,3 @@ type_id!(IDAT);
 type_id!(IAMP);
 type_id!(IAPP);
 type_id!(IAPV);
-
-pub enum MetaTagsTypes {
-    author = 0,
-    /*
-guitarist: String,
-band: String,
-song: String,
-style: String,
-pickup_style: String,
-pickup_position: String,
-date: u16,
-amp_name: String,
-creator_app: String,
-creator_app_version: String
-
-     */
-}

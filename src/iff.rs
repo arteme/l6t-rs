@@ -26,6 +26,13 @@ impl Chunk {
         Chunk::new_chunk(data, 0, data.len(), little_endian)
     }
 
+    pub fn is_little_endian(&self) -> bool {
+        match self {
+            Chunk::Envelope { little_endian, .. } => *little_endian,
+            Chunk::Data { little_endian, .. } => *little_endian
+        }
+    }
+
     fn new_chunk(data: &[u8], index: usize, last_index: usize, little_endian: Option<bool>) -> Result<Self> {
         if index + 8 > last_index {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));

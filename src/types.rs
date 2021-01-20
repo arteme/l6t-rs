@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 /// The Type ID of a chunk.
 #[derive(Clone,Copy,Eq,Hash,Ord,PartialEq,PartialOrd)]
 pub struct TypeID(pub [u8; 4]);

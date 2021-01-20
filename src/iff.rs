@@ -2,8 +2,7 @@
 /// Line6-specific quirks such as little-endian files and unaligned data
 /// chunks.
 ///
-use std::io::{Error,ErrorKind,Result,Write};
-use std::convert::TryFrom;
+use std::io::{Error,ErrorKind,Result};
 
 use crate::types::{TypeID, UNALIGNED_CHUNKS};
 

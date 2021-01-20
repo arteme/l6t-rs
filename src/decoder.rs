@@ -5,8 +5,6 @@ use crate::iff::Chunk;
 use crate::types::{TypeID};
 use crate::model::*;
 use crate::bytecast;
-use std::borrow::Borrow;
-use std::num::ParseIntError;
 use std::io;
 use std::collections::HashMap;
 

@@ -118,11 +118,24 @@ fn encode_date(date: &usize, type_id: TypeID) -> Option<Chunk> {
     return encode_utf(&str, type_id);
 }
 
-fn decode_date(data: &[u8]) -> usize {
-    let str = decode_utf(data);
+fn decode_date(str: &str) -> usize {
     match str.parse::<usize>() {
         Ok(v) => v * 1000,
         Err(_) => 0
+    }
+}
+
+fn decode_value(data: &[u32;2]) -> Result<Value, io::Error> {
+    match data[0] {
+        0 => Ok(Value::Int(data[1])),
+        1 => {
+            let f: f32 = unsafe { std::mem::transmute_copy(&data[1]) };
+            Ok(Value::Float(f))
+        }
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Unsupported value type {:#x}", data[0]))
+        )
     }
 }
 
@@ -161,7 +174,7 @@ fn read_meta_tags(chunk: &Chunk) -> Result<MetaTags, io::Error> {
             types::ISTL => tags.style = r.read_utf(data.len())?,
             types::IPUS => tags.pickup_style = r.read_utf(data.len())?,
             types::IPUP => tags.pickup_position = r.read_utf(data.len())?,
-            types::IDAT => tags.date = decode_date(r.read_utf(data.len())?.as_ref()),
+            types::IDAT => tags.date = decode_date(&r.read_utf(data.len())?),
             types::IAMP => tags.amp_name = r.read_utf(data.len())?,
             types::IAPP => tags.creator_app = r.read_utf(data.len())?,
             types::IAPV => tags.creator_app_version = r.read_utf(data.len())?,
@@ -245,8 +258,8 @@ fn read_model_param(data: &[u8], little_endian: bool) -> Result<ModelParam, io::
     let mut param: ModelParam = Default::default();
 
     param.param_id = r.read_u32()? & 0x00ffffff;
-    param.value_type = r.read_u32()?.into();
-    param.value = r.read_u32()?;
+    let data = [r.read_u32()?, r.read_u32()?];
+    param.value = decode_value(&data)?;
 
     Ok(param)
 }

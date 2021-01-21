@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug)]
 pub struct TargetDevice {
@@ -19,14 +20,13 @@ pub struct Model {
 #[derive(Debug)]
 pub struct ModelParam {
     pub param_id: u32,
-    pub value_type: ValueType,
-    pub value: u32
+    pub value: Value
 }
 
 #[derive(Debug)]
-pub enum ValueType {
-    Int = 0,
-    Float = 1
+pub enum Value {
+    Int(u32),
+    Float(f32)
 }
 
 #[derive(Debug)]
@@ -107,18 +107,16 @@ impl Default for ModelParam {
     fn default() -> Self {
         ModelParam {
             param_id: 0,
-            value_type: 0.into(),
-            value: 0
+            value: Value::Int(0)
         }
     }
 }
 
-impl From<u32> for ValueType {
-    fn from(v: u32) -> Self {
-        match v {
-            0 => ValueType::Int,
-            1 => ValueType::Float,
-            _ => panic!("Unknown value: {}", v)
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Value::Int(v) => write!(f, "int {}", v),
+            Value::Float(v) => write!(f, "float {}", v)
         }
     }
 }

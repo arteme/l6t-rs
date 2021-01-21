@@ -180,7 +180,7 @@ impl Pretty for model::Model {
 
 impl Pretty for model::ModelParam {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
-        writeln!(pp, "id={:#08x} {:?} {:#08x}", self.param_id, self.value_type, self.value)
+        writeln!(pp, "id={:#08x} {}", self.param_id, self.value)
     }
 }
 

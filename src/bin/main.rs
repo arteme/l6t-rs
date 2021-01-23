@@ -24,7 +24,7 @@ fn main() {
     let patch = Decoder::read(v.as_slice());
     match patch {
         Ok(p) => PrettyPrinter::println(&p).unwrap(),
-        Err(_) => println!("Unsupported file format")
+        Err(e) => println!("ERROR: {}", e)
     }
 }
 

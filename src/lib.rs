@@ -7,4 +7,5 @@ pub mod decoder;
 pub mod model;
 
 mod bytecast;
+mod hex;
 

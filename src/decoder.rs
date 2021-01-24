@@ -104,13 +104,6 @@ fn encode_utf(str: &String, type_id: TypeID) -> Option<Chunk> {
     })
 }
 
-fn decode_utf(data: &[u8]) -> String {
-    let utf16: Vec<u16> = data.chunks(2).take(data.len() & (usize::MAX-1))
-        .map(|c| u16::from_be_bytes(*array_ref![c, 0, 2])).collect();
-    String::from_utf16_lossy(&utf16)
-
-}
-
 fn encode_date(date: &usize, type_id: TypeID) -> Option<Chunk> {
     if *date == 0 { return None }
 

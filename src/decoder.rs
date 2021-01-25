@@ -5,6 +5,7 @@ use crate::iff::Chunk;
 use crate::types::{TypeID};
 use crate::model::*;
 use crate::bytecast;
+use crate::hex::PrintHex;
 use std::io;
 use std::collections::HashMap;
 
@@ -22,6 +23,11 @@ impl<R: Read> Reader<R> {
         let mut v = [0u8; 1];
         self.reader.read_exact(&mut v)?;
         Ok(v[0])
+    }
+
+    pub fn read_u8_into(&mut self, buffer: &mut [u8]) -> Result<(), io::Error> {
+       self.reader.read_exact(buffer)?;
+        Ok(())
     }
 
     pub fn read_u32(&mut self) -> Result<u32, io::Error> {
@@ -57,6 +63,15 @@ impl<R: Read> Reader<R> {
         let str = self.read_utf(len)?;
         Ok(str.split('\0').next().unwrap().to_string())
     }
+
+    pub fn read_ascii_n(&mut self) -> Result<String, io::Error> {
+        let len = self.read_u8()? as usize;
+        let mut buffer = vec![0u8; len];
+        self.read_u8_into(&mut buffer)?;
+        // it's okay, we're dealing with ascii here
+        let str = unsafe { String::from_utf8_unchecked(buffer) };
+        Ok(str)
+    }
 }
 
 fn reader_for_slice(slice: &[u8], little_endian: bool) -> Reader<Cursor<&[u8]>> {
@@ -67,7 +82,7 @@ pub struct Decoder {}
 
 impl Decoder {
     pub fn read(data: &[u8]) -> Result<L6Patch, io::Error> {
-        let chunk = iff::Chunk::new(data, None).unwrap();
+        let mut chunk = iff::Chunk::new(data, None).unwrap();
 
         if chunk.has_envelope_type(types::FORM, types::L6PA) {
             // L6T patch file
@@ -83,6 +98,22 @@ impl Decoder {
                 }
             }
             return Ok(patch);
+        } else if chunk.has_envelope_type(types::FORM, types::SSLB) {
+            // SoundDiver lib
+
+            // sounddiver sometimes places data outsize the FORM/SSLB container
+            if chunk.all_chunks().is_empty() && data.len() > 12 {
+                chunk = iff::Chunk::with_size_override(data, data.len() - 8, None).unwrap()
+            }
+
+            for (type_id, chunk) in chunk.all_chunks() {
+                match type_id {
+                    types::LENT => { read_sslb_entry(chunk)?; },
+                    //types::LHDR | types::WSEQ => {}, // ignore
+                    _ => {}
+                }
+            }
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "ok"))
         }
 
         Err(io::Error::new(io::ErrorKind::InvalidInput, "cannot parse file"))
@@ -256,3 +287,62 @@ fn read_model_param(data: &[u8], little_endian: bool) -> Result<ModelParam, io::
 
     Ok(param)
 }
+
+fn read_sslb_entry(chunk: &Chunk) -> Result<(), io::Error> {
+    let little_endian = chunk.is_little_endian();
+    let data = match chunk {
+        Chunk::Data { data, .. } => data,
+        _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Data chunk expected"))
+    };
+    if data.len() < 13 {
+        // Empty entry?
+        return Ok(());
+    }
+    let mut r = reader_for_slice(data, little_endian);
+    let mut header = [0u8; 13];
+    r.read_u8_into(&mut header)?;
+
+    // 2a = POD, ff = universal
+    let can_process = header[1] == 0x2a || (header[0..2] == [0x80, 0xff]);
+    let name = r.read_ascii_n()?;
+    if !can_process {
+        // Not a POD program, stop here
+        return Ok(());
+    }
+    let z = r.read_u8()?; // this should be 0x03
+    let n = 55 - r.read_u8()?;
+    if n > 0 {
+        let mut bytes = vec![0u8; n as usize];
+        r.read_u8_into(&mut bytes)?;
+    }
+    let mut bytes = vec![0u8; 55];
+    r.read_u8_into(&mut bytes)?;
+
+    loop {
+        let id = r.read_u8()?;
+        match id {
+            0x02 => {
+                let str = r.read_ascii_n()?;
+                println!("comment: {}", str);
+            },
+            0x06 => {
+                let str = r.read_ascii_n()?;
+                println!("position: {}", str);
+            },
+            0x00 => {
+                let mut skip = vec![0u8; 2];
+                r.read_u8_into(&mut skip)?;
+                println!("end:");
+                skip.print_hex();
+                break;
+            }
+            _ => {
+                println!("unknown: {:#02x}", id);
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+

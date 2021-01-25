@@ -22,7 +22,11 @@ pub enum Chunk {
 }
 impl Chunk {
     pub fn new(data: &[u8], little_endian: Option<bool>) -> Result<Self> {
-        Chunk::new_chunk(data, 0, data.len(), little_endian)
+        Chunk::new_chunk(data, 0, data.len(), little_endian, None)
+    }
+
+    pub fn with_size_override(data: &[u8], size_override: usize, little_endian: Option<bool>) -> Result<Self> {
+        Chunk::new_chunk(data, 0, data.len(), little_endian, Some(size_override))
     }
 
     pub fn is_little_endian(&self) -> bool {
@@ -32,7 +36,8 @@ impl Chunk {
         }
     }
 
-    fn new_chunk(data: &[u8], index: usize, last_index: usize, little_endian: Option<bool>) -> Result<Self> {
+    fn new_chunk(data: &[u8], index: usize, last_index: usize, little_endian: Option<bool>,
+                 size_override: Option<usize>) -> Result<Self> {
         if index + 8 > last_index {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
         }
@@ -50,7 +55,8 @@ impl Chunk {
             }
         };
 
-        let size = Self::chunk_size(&data, index+4, little_endian);
+        let size = size_override.unwrap_or_else(
+            || Self::chunk_size(&data, index+4, little_endian));
         //println!("chunk '{}' len {} at {} env {}", id, size, index, id.is_envelope());
         if index + 8 + size > last_index {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
@@ -62,9 +68,10 @@ impl Chunk {
             }
             let data_id = Self::chunk_id(&data, index+8, little_endian);
             let mut i = index + 12;
+            println!("size {}", size);
             let mut chunks = Vec::new();
             while i < index + 8 + size {
-                let chunk = Self::new_chunk(&data, i, index+8+size, Some(little_endian))?;
+                let chunk = Self::new_chunk(&data, i, index+8+size, Some(little_endian), None)?;
                 i += chunk.size();
                 if aligned && i % 2 != 0 {
                     i += 1;

@@ -2,6 +2,23 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug)]
+pub struct DateTime {
+    pub year: u32,
+    pub month: u32,
+    pub day: u32,
+    pub hour: u32,
+    pub minute: u32,
+    pub second: u32
+}
+
+#[derive(Debug)]
+pub struct Uses {
+    pub slot: u16,
+    pub entry: u16
+}
+
+
+#[derive(Debug)]
 pub struct TargetDevice {
     pub midi_id: u32,
     pub name: String,
@@ -50,6 +67,11 @@ pub struct L6Patch {
     pub target_device: TargetDevice,
     pub models: HashMap<u32, Model>,
     pub meta: MetaTags
+}
+
+#[derive(Debug)]
+pub struct SoundDiverLib {
+
 }
 
 impl Default for MetaTags {

@@ -4,7 +4,7 @@
 ///
 use std::io::{Error,ErrorKind,Result};
 
-use crate::types::{TypeID, UNALIGNED_CHUNKS};
+use crate::types::{TypeID, UNALIGNED_CHUNKS, SSLB};
 
 pub enum Chunk {
     Envelope {
@@ -55,20 +55,26 @@ impl Chunk {
             }
         };
 
-        let size = size_override.unwrap_or_else(
+        let mut size = size_override.unwrap_or_else(
             || Self::chunk_size(&data, index+4, little_endian));
         //println!("chunk '{}' len {} at {} env {}", id, size, index, id.is_envelope());
         if index + 8 + size > last_index {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
         }
         if id.is_envelope() {
-            let aligned = UNALIGNED_CHUNKS.contains(&&id);
             if size < 4 {
                 return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
             }
             let data_id = Self::chunk_id(&data, index+8, little_endian);
             let mut i = index + 12;
-            println!("size {}", size);
+
+            let aligned = !UNALIGNED_CHUNKS.contains(&&data_id);
+            if &data_id == &SSLB && size == 4 {
+                // Sounddiver sometimes places data outsize the FORM/SSLB container
+                // and doesn't update the size ;(
+                size = data.len() - 8;
+            }
+
             let mut chunks = Vec::new();
             while i < index + 8 + size {
                 let chunk = Self::new_chunk(&data, i, index+8+size, Some(little_endian), None)?;

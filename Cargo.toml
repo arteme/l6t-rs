@@ -5,3 +5,11 @@ authors = ["Artem Egorkine <arteme@gmail.fi>"]
 edition = "2018"
 
 [dependencies]
+arrayref = "0.3.6"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"

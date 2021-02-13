@@ -18,6 +18,11 @@ fn main() {
     let mut v: Vec<u8> = Vec::new();
     File::open(args[1].as_str()).unwrap().read_to_end(&mut v).unwrap();
 
+    if &v[2..2+4] == &[0x2d, 0x6c, 0x7a, 0x35] { // "-lz5"
+        println!("Compressed file, bailing out");
+        std::process::exit(-1);
+    }
+
     let chunk = Chunk::new(v.as_slice(), None).unwrap();
     PrettyPrinter::println(&chunk).unwrap();
 

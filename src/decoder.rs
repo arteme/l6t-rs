@@ -25,6 +25,15 @@ impl<R: Read> Reader<R> {
         Ok(v[0])
     }
 
+    pub fn read_u16(&mut self) -> Result<u16, io::Error> {
+        let mut v = [0u8; 2];
+        self.reader.read_exact(&mut v)?;
+        Ok(match self.little_endian {
+            true => u16::from_le_bytes(v),
+            false => u16::from_be_bytes(v)
+        })
+    }
+
     pub fn read_u8_into(&mut self, buffer: &mut [u8]) -> Result<(), io::Error> {
        self.reader.read_exact(buffer)?;
         Ok(())
@@ -100,11 +109,6 @@ impl Decoder {
             return Ok(patch);
         } else if chunk.has_envelope_type(types::FORM, types::SSLB) {
             // SoundDiver lib
-
-            // sounddiver sometimes places data outsize the FORM/SSLB container
-            if chunk.all_chunks().is_empty() && data.len() > 12 {
-                chunk = iff::Chunk::with_size_override(data, data.len() - 8, None).unwrap()
-            }
 
             for (type_id, chunk) in chunk.all_chunks() {
                 match type_id {
@@ -288,6 +292,29 @@ fn read_model_param(data: &[u8], little_endian: bool) -> Result<ModelParam, io::
     Ok(param)
 }
 
+fn decode_lent_datettime(data: &[u8], little_endian: bool) -> DateTime {
+    let mut r = reader_for_slice(data, little_endian);
+    let v = r.read_u32().unwrap();
+    let second = v & 0x1f;
+    let minute = (v >> 5) & 0x3f;
+    let hour = (v >> 11) & 0x1f;
+    let day = (v >> 16) & 0x01f;
+    let month = (v >> 16 + 5) & 0x0f;
+    let year = (v >> 16 + 9) & 0x7f;
+    DateTime { year: year + 1980, month, day, hour, minute, second: second * 2 }
+}
+
+fn decode_lent_uses(data: &[u8], little_endian: bool) -> Uses {
+    let mut r = reader_for_slice(data, little_endian);
+    data.print_hex();
+    let slot = r.read_u16().unwrap();
+    let entry = r.read_u16().unwrap();
+    let z = r.read_u16().unwrap();
+    assert_eq!(z, 0);
+    Uses { slot, entry }
+}
+
+
 fn read_sslb_entry(chunk: &Chunk) -> Result<(), io::Error> {
     let little_endian = chunk.is_little_endian();
     let data = match chunk {
@@ -299,52 +326,85 @@ fn read_sslb_entry(chunk: &Chunk) -> Result<(), io::Error> {
         return Ok(());
     }
     let mut r = reader_for_slice(data, little_endian);
-    let mut header = [0u8; 13];
+    let mut header = [0u8; 12];
     r.read_u8_into(&mut header)?;
 
-    // 2a = POD, ff = universal
-    let can_process = header[1] == 0x2a || (header[0..2] == [0x80, 0xff]);
-    let name = r.read_ascii_n()?;
-    if !can_process {
-        // Not a POD program, stop here
-        return Ok(());
-    }
-    r.read_u8()?; // this should be 0x03
+    println!("LENT -------------------");
+    println!("LENT size: {}", data.len());
+    println!("LENT header {{");
+    header.print_hex();
+    println!("v1:");
+    println!("       id: {:#02x}", header[0]);
+    println!("      m/m: {:#02x}/{:#02x}", header[1], header[2]);
+    println!("        ?: {:#02x}", header[3]);
+    println!("date/time: {:?}", decode_lent_datettime(array_ref![header,4,4], little_endian));
+    println!("        ?: {:#02x}", header[8]);
+    println!("        ?: {:#02x}", header[9]);
+    println!("device id: {}", header[10] + 1);
+    println!("        ?: {:#02x}", header[11]);
+    println!("}}");
 
-    // This must be the POD model name if using UNI module
-    // Skip everything except the last 55 bytes of actual data
-    let n = r.read_u8()? - 55;
-    if n > 0 {
-        let mut bytes = vec![0u8; n as usize];
-        r.read_u8_into(&mut bytes)?;
-    }
-    let mut bytes = vec![0u8; 55];
-    r.read_u8_into(&mut bytes)?;
-
+    println!("LENT data {{");
     loop {
         let id = r.read_u8()?;
         match id {
+            0x01 => {
+                let str = r.read_ascii_n()?;
+                println!("name: {}", str);
+            },
             0x02 => {
                 let str = r.read_ascii_n()?;
                 println!("comment: {}", str);
+            },
+            0x03 => {
+                let mut len = r.read_u8()? as usize;
+                if (len & 0x80 != 0x00) {
+                    len = (len & 0x7f) * 128;
+                    len += r.read_u8()? as usize;
+                }
+                let mut buffer = vec![0u8; len];
+                r.read_u8_into(&mut buffer)?;
+                println!("data: len={} ({0:#02x})", len);
+                buffer.print_hex();
+            },
+            0x04 => { // wip
+                let len = r.read_u8()? as usize;
+                let mut buffer = vec![0u8; len];
+                r.read_u8_into(&mut buffer)?;
+
+                println!("uses:");
+                let mut r1 = reader_for_slice(&buffer, little_endian);
+                for n in 0..(len/6) {
+                    let u = decode_lent_uses(array_ref![buffer, n * 6, 6], little_endian);
+                    println!("{:?}", u);
+                }
+            },
+            0x05 => { // catch with length
+                let len = r.read_u8()? as usize;
+                let mut buffer = vec![0u8; len];
+                r.read_u8_into(&mut buffer)?;
+                println!("unknown {:#02x}: len={} ({1:#02x})", id, len);
+                buffer.print_hex();
             },
             0x06 => {
                 let str = r.read_ascii_n()?;
                 println!("position: {}", str);
             },
-            0x00 => {
-                let mut skip = vec![0u8; 2];
+            0x00 | _ => { // catch the rest of the buffer
+                let len = data.len() - (r.reader.position() as usize);
+                let mut skip = vec![0u8; len];
                 r.read_u8_into(&mut skip)?;
-                println!("end:");
+                if id == 0x00 {
+                    println!("end:");
+                } else {
+                    println!("unknown: {:#02x}", id);
+                }
                 skip.print_hex();
-                break;
-            }
-            _ => {
-                println!("unknown: {:#02x}", id);
                 break;
             }
         }
     }
+    println!("}}");
 
     Ok(())
 }

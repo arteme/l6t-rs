@@ -309,8 +309,11 @@ fn read_sslb_entry(chunk: &Chunk) -> Result<(), io::Error> {
         // Not a POD program, stop here
         return Ok(());
     }
-    let z = r.read_u8()?; // this should be 0x03
-    let n = 55 - r.read_u8()?;
+    r.read_u8()?; // this should be 0x03
+
+    // This must be the POD model name if using UNI module
+    // Skip everything except the last 55 bytes of actual data
+    let n = r.read_u8()? - 55;
     if n > 0 {
         let mut bytes = vec![0u8; n as usize];
         r.read_u8_into(&mut bytes)?;

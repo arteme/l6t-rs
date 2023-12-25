@@ -156,6 +156,7 @@ impl Pretty for HashMap<u32, model::Model> {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
         writeln!(pp, "Model:")?;
         pp.indent += 1;
+
         for v in self.values() {
             Pretty::fmt(v, pp)?;
         }

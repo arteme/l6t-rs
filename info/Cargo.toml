@@ -1,0 +1,11 @@
+[package]
+name = "l6t-info"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap = "4"
+
+l6t = { path = "../lib" }

@@ -1,7 +1,9 @@
-[package]
-name = "l6t"
-version = "0.1.0"
-authors = ["Artem Egorkine <arteme@gmail.fi>"]
-edition = "2018"
+[workspace]
+resolver = "2"
+members = ["lib", "info"]
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+authors = ["Artem Egorkine <arteme@gmail.com>"]
+edition = "2021"
+rust-version = "1.65"

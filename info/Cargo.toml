@@ -6,6 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-clap = "4"
+clap = { version = "4", features = ["derive", "wrap_help"] }
 
 l6t = { path = "../lib" }

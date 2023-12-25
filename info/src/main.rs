@@ -1,24 +1,28 @@
+mod opts;
+
 use std::fs::File;
 use std::io::Read;
 use std::fmt;
 use std::fmt::Write;
+use clap::Parser;
 
 use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
 use l6t::model;
+use crate::opts::Opts;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 {
-        println!("usage: {} <file>", args[0]);
-        std::process::exit(-1);
-    }
+
+    let opts = Opts::parse();
 
     let mut v: Vec<u8> = Vec::new();
-    File::open(args[1].as_str()).unwrap().read_to_end(&mut v).unwrap();
+    File::open(opts.file).unwrap()
+        .read_to_end(&mut v).unwrap();
 
     let chunk = Chunk::new(v.as_slice(), None).unwrap();
-    PrettyPrinter::println(&chunk).unwrap();
+    if opts.dump_iff {
+        PrettyPrinter::println(&chunk).unwrap();
+    }
 
     let patch = Decoder::read(v.as_slice());
     match patch {

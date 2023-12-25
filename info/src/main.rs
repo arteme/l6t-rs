@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::Read;
 use std::fmt;
 use std::fmt::Write;
-use std::collections::HashMap;
 
 use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
@@ -152,12 +151,12 @@ impl Pretty for model::TargetDevice {
     }
 }
 
-impl Pretty for HashMap<u32, model::Model> {
+impl Pretty for Vec<model::Model> {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
         writeln!(pp, "Model:")?;
         pp.indent += 1;
 
-        for v in self.values() {
+        for v in self.iter() {
             Pretty::fmt(v, pp)?;
         }
         pp.indent -= 1;

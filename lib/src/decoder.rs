@@ -7,7 +7,6 @@ use crate::model::*;
 use crate::bytecast;
 use crate::hex::PrintHex;
 use std::io;
-use std::collections::HashMap;
 
 pub struct Reader<R: Read> {
     reader: R,
@@ -228,22 +227,19 @@ fn read_target_device(chunk: &Chunk, little_endian: bool) -> Result<TargetDevice
     Ok(TargetDevice { midi_id, name, version })
 }
 
-fn read_models(chunk: &Chunk) -> Result<HashMap<u32, Model>, io::Error> {
+fn read_models(chunk: &Chunk) -> Result<Vec<Model>, io::Error> {
     let chunks = match chunk {
         Chunk::Envelope { ref chunks, .. } => chunks,
         Chunk::Data { .. } => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Container chunk expected"))
     };
 
-    let mut models: HashMap<u32, Model> = HashMap::new();
-
-    for chunk in chunks {
+    chunks.iter().map(|chunk| {
         if chunk.has_envelope_type(types::LIST, types::MODL) {
-            let model = read_model(chunk)?;
-            models.insert(model.slot_id, model);
+            read_model(chunk)
+        } else {
+            Err(io::Error::new(io::ErrorKind::InvalidInput, "Incorrect envelope type"))
         }
-    }
-
-    Ok(models)
+    }).collect()
 }
 
 

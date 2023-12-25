@@ -48,7 +48,7 @@ pub struct MetaTags {
 #[derive(Debug)]
 pub struct L6Patch {
     pub target_device: TargetDevice,
-    pub models: HashMap<u32, Model>,
+    pub models: Vec<Model>,
     pub meta: MetaTags
 }
 

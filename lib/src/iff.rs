@@ -68,7 +68,7 @@ impl Chunk {
             }
             let data_id = Self::chunk_id(&data, index+8, little_endian);
             let mut i = index + 12;
-            println!("size {}", size);
+            //println!("size {}", size);
             let mut chunks = Vec::new();
             while i < index + 8 + size {
                 let chunk = Self::new_chunk(&data, i, index+8+size, Some(little_endian), None)?;

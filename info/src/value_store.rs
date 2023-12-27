@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use l6t::model::{L6Patch, ModelParam, Value as L6Value};
+use l6t::model::{L6Patch, Model, ModelParam, Value as L6Value};
 use crate::data_model::{DataModel, Param, ParamType};
 
 #[derive(Clone)]
@@ -55,6 +55,12 @@ impl Value {
 pub type ValueMap = HashMap<String, Value>;
 
 pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
+    read_values_full(patch, model, |_, _| {})
+}
+
+pub fn read_values_full(patch: &L6Patch, model: &DataModel,
+                        mut missing_props_fn: impl FnMut(&Model, &Vec<u32>)) -> ValueMap
+{
     let mut data: HashMap<String, Value> = HashMap::new();
 
     let slots = model.groups.iter().flat_map(|g| &g.slots);
@@ -70,6 +76,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
             continue;
         };
 
+        let mut missing_params = vec![];
         for param in &slot.params {
             let (name, value) = match param {
                 Param::SlotModel { name } => {
@@ -82,6 +89,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
                     let patch_param = patch_model.params.iter()
                         .find(|p| p.param_id == *param_id);
                     let Some(patch_param) = patch_param else {
+                        missing_params.push(*param_id);
                         continue;
                     };
                     let value = param_to_value(patch_param, param_type, model.floats_as_ints);
@@ -94,6 +102,9 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
             };
 
             data.insert(name.clone(), value);
+        }
+        if !missing_params.is_empty() {
+            missing_props_fn(patch_model, &missing_params);
         }
     }
 
@@ -172,7 +183,12 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
                     Param::FixedParam { name, .. } => name,
                     Param::IgnoreParam { .. } => { continue }
                 };
-                group_values.push((name.clone(), values[name].clone()));
+                // We allow values to contain only a portion of props defined in
+                // the slot. "read_values" would have reported missing props errors,
+                // but the app may have chosen to ignore them.
+                if let Some(value) = values.get(name) {
+                    group_values.push((name.clone(), value.clone()));
+                }
             }
         }
 

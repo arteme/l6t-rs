@@ -1,4 +1,14 @@
 
+pub struct DataModel {
+    pub floats_as_ints: bool,
+    pub groups: Vec<Group>,
+}
+
+pub struct Group {
+    pub name: String,
+    pub slots: Vec<Slot>
+}
+
 pub struct Slot {
     pub slot_id: u32,
     pub fixed_model: Option<u32>,

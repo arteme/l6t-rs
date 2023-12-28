@@ -80,7 +80,7 @@ pub struct Decoder {}
 
 impl Decoder {
     pub fn read(data: &[u8]) -> Result<L6Patch, io::Error> {
-        let mut chunk = Chunk::new(data, None).unwrap();
+        let mut chunk = Chunk::from_data(data, None)?;
 
         if chunk.has_envelope_type(types::FORM, types::L6PA) {
             // L6T patch file
@@ -101,7 +101,7 @@ impl Decoder {
 
             // sounddiver sometimes places data outsize the FORM/SSLB container
             if chunk.all_chunks().is_empty() && data.len() > 12 {
-                chunk = Chunk::with_size_override(data, data.len() - 8, None).unwrap()
+                chunk = Chunk::from_data_with_size(data, data.len() - 8, None).unwrap()
             }
 
             for (type_id, chunk) in chunk.all_chunks() {

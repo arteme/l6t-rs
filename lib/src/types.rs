@@ -17,6 +17,29 @@ type_id!(FORM_LE, b"MROF");
 type_id!(LIST_LE, b"TSIL");
 
 impl TypeID {
+    pub fn from_data(data: &[u8; 4], little_endian: bool) -> Self {
+        if little_endian {
+            TypeID([data[3], data[2], data[1], data[0]])
+        } else {
+            TypeID([data[0], data[1], data[2], data[3]])
+        }
+    }
+
+    pub fn to_data(&self, data: &mut [u8; 4], little_endian: bool) {
+        if little_endian {
+            data[0] = self.0[3];
+            data[1] = self.0[2];
+            data[2] = self.0[1];
+            data[3] = self.0[0];
+        } else {
+            data[0] = self.0[0];
+            data[1] = self.0[1];
+            data[2] = self.0[2];
+            data[3] = self.0[3];
+        }
+    }
+
+
     pub fn is_le_envelope(self) -> bool {
         match self {
             FORM_LE | LIST_LE => true,

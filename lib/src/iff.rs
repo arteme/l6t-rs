@@ -22,12 +22,12 @@ pub enum Chunk {
     },
 }
 impl Chunk {
-    pub fn new(data: &[u8], little_endian: Option<bool>) -> Result<Self> {
-        Chunk::new_chunk(data, 0, data.len(), little_endian, None)
+    pub fn from_data(data: &[u8], little_endian: Option<bool>) -> Result<Self> {
+        Chunk::from_data_full(data, 0, data.len(), little_endian, None)
     }
 
-    pub fn with_size_override(data: &[u8], size_override: usize, little_endian: Option<bool>) -> Result<Self> {
-        Chunk::new_chunk(data, 0, data.len(), little_endian, Some(size_override))
+    pub fn from_data_with_size(data: &[u8], size_override: usize, little_endian: Option<bool>) -> Result<Self> {
+        Chunk::from_data_full(data, 0, data.len(), little_endian, Some(size_override))
     }
 
     pub fn is_little_endian(&self) -> bool {
@@ -37,8 +37,8 @@ impl Chunk {
         }
     }
 
-    fn new_chunk(data: &[u8], index: usize, last_index: usize, little_endian: Option<bool>,
-                 size_override: Option<usize>) -> Result<Self> {
+    fn from_data_full(data: &[u8], index: usize, last_index: usize, little_endian: Option<bool>,
+                      size_override: Option<usize>) -> Result<Self> {
         if index + 8 > last_index {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
         }
@@ -72,7 +72,7 @@ impl Chunk {
             //println!("size {}", size);
             let mut chunks = Vec::new();
             while i < index + 8 + size {
-                let chunk = Self::new_chunk(&data, i, index+8+size, Some(little_endian), None)?;
+                let chunk = Self::from_data_full(&data, i, index+8+size, Some(little_endian), None)?;
                 i += chunk.size();
                 if aligned && i % 2 != 0 {
                     i += 1;
@@ -86,11 +86,11 @@ impl Chunk {
     }
 
     fn chunk_id(data: &[u8], index: usize, little_endian: bool) -> TypeID {
-        if little_endian {
-            TypeID([data[index+3],data[index+2],data[index+1],data[index]])
-        } else {
-            TypeID([data[index],data[index+1],data[index+2],data[index+3]])
-        }
+        // SAFETY: ok because caller checks the length
+        let ptr = data[index..].as_ptr() as *const [u8; 4];
+        let arr = unsafe { &*ptr };
+
+        TypeID::from_data(arr, little_endian)
     }
 
     fn chunk_size(data: &[u8], index: usize, little_endian: bool) -> usize {
@@ -127,26 +127,42 @@ impl Chunk {
         }
     }
 
-    /*
+    fn write_type_id<W: Write>(id: &TypeID, w: &mut W, little_endian: bool) -> Result<()> {
+        let mut data = [0u8;4];
+        id.to_data(&mut data, little_endian);
+        w.write_all(&data)
+    }
+
+    fn write_u32<W: Write>(value: u32, w: &mut W, little_endian: bool) -> Result<()> {
+        let data = if little_endian {
+            value.to_le_bytes()
+        } else {
+            value.to_be_bytes()
+        };
+        w.write_all(&data)
+    }
+
     pub fn write<W: Write>(&self, w: &mut W) -> Result<()> {
         match self {
-            &Chunk::Envelope{ envelope_id, id, ref chunks } => {
-                w.write_all(&envelope_id.0[..])?;
+            Chunk::Envelope{ envelope_id, id, chunks, little_endian, aligned } => {
+                Self::write_type_id(envelope_id, w, *little_endian)?;
                 let size = self.size() - 8;
-                w.write_all(&[(size >> 24) as u8, (size >> 16) as u8, (size >> 8) as u8, size as u8])?;
-                w.write_all(&id.0[..])?;
+                Self::write_u32(size as u32, w, *little_endian)?;
+                Self::write_type_id(id, w, *little_endian)?;
                 for chunk in chunks {
                     chunk.write(w)?;
                 }
-                if size % 2 != 0 {
+                if *aligned && size % 2 != 0 {
                     w.write_all(&[0u8])?;
                 }
             },
-            &Chunk::Data{ id, data } => {
-                w.write_all(&id.0[..])?;
+            Chunk::Data{ id, data, little_endian } => {
+                Self::write_type_id(id, w, *little_endian)?;
                 let size = self.size() - 8;
-                w.write_all(&[(size >> 24) as u8, (size >> 16) as u8, (size >> 8) as u8, size as u8])?;
+                Self::write_u32(size as u32, w, *little_endian)?;
                 w.write_all(data)?;
+                // TODO: data chunks know nothing of alignment. What happens in sounddiver
+                //       when data chunk is of odd size?
                 if size % 2 != 0 {
                     w.write_all(&[0u8])?;
                 }
@@ -155,7 +171,6 @@ impl Chunk {
         Ok(())
     }
 
-     */
     fn size(&self) -> usize {
         match self {
             &Chunk::Envelope{ ref chunks, aligned, .. } => {

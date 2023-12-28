@@ -8,13 +8,13 @@ mod value_store;
 
 use std::cell::RefCell;
 use std::fs::File;
-use std::io::Read;
-use std::fmt::Write;
+use std::io::{Read, Write};
 use std::rc::Rc;
 use clap::Parser;
 
 use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
+use l6t::encoder::Encoder;
 use l6t::model::Model;
 use crate::data::POD2_DATA_MODEL;
 use crate::opts::Opts;
@@ -28,7 +28,7 @@ fn main() {
     File::open(opts.file).unwrap()
         .read_to_end(&mut v).unwrap();
 
-    let chunk = Chunk::new(v.as_slice(), None).unwrap();
+    let chunk = Chunk::from_data(v.as_slice(), None).unwrap();
     if opts.dump_iff {
         PrettyPrinter::println(&chunk).unwrap();
     }
@@ -62,9 +62,9 @@ fn main() {
                                   missing_prop_cb, unprocessed_cb);
     let groups = group_values(&patch, &values, &POD2_DATA_MODEL);
 
-    let SEP = std::iter::repeat('-').take(65).collect::<String>();
+    let sep = std::iter::repeat('-').take(65).collect::<String>();
     for group in &groups {
-        println!("{}\n{}", group.name, SEP);
+        println!("{}\n{}", group.name, sep);
 
         for (name, value) in &group.values {
             println!("{:30} : {:5} : {}", name, value.get_type(), value);
@@ -72,30 +72,24 @@ fn main() {
         println!();
     }
 
-    {
-        let errors = errors.borrow();
-        if !errors.is_empty() {
-            println!("ERRORS\n{}", SEP);
-            for error in errors.iter() {
-                println!("{}", error);
-            }
+    let errors = errors.borrow();
+    if !errors.is_empty() {
+        println!("ERRORS\n{}", sep);
+        for error in errors.iter() {
+            println!("{}", error);
         }
     }
 
-    /*
-    let p2 = write_values(values, &POD2_DATA_MODEL);
-    let v2 = read_values_full(&p2, &POD2_DATA_MODEL,
-                                  missing_prop_cb, unprocessed_cb);
-    let g2 = group_values(&p2, &v2, &POD2_DATA_MODEL);
-    for group in &g2 {
-        println!("{}\n{}", group.name, SEP);
+    if let Some(write_filename) = opts.write {
+        let patch = if opts.encode {
+            write_values(values, &POD2_DATA_MODEL)
+        } else {
+            patch
+        };
 
-        for (name, value) in &group.values {
-            println!("{:30} : {:5} : {}", name, value.get_type(), value);
-        }
-        println!();
+        let vec = Encoder::write(&patch).unwrap();
+        File::create(write_filename).unwrap()
+            .write(&vec).unwrap();
     }
-    */
-
 }
 

@@ -12,6 +12,14 @@ pub struct Opts {
     /// Dump L6T model loaded from the file
     pub dump_patch: bool,
 
+    #[clap(short = 'e', long)]
+    /// Re-encode the values before writing
+    pub encode: bool,
+
+    #[clap(short = 'w', long)]
+    /// File to write L&T patch to
+    pub write: Option<PathBuf>,
+
     /// File to print out the info for
     pub file: PathBuf
 }

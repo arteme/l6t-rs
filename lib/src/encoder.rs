@@ -192,10 +192,10 @@ fn write_model_info(model: &Model, little_endian: bool) -> Result<Chunk, io::Err
 
     w.write_u32(model.model_id)?;
     w.write_u32(model.slot_id)?;
-    w.write_u8(model.ordinal)?;;
+    w.write_u8(model.ordinal)?;
     w.write_u8(0)?;
     w.write_u8(0)?;
-    w.write_u8(if model.enabled { 1 } else { 0 })?;;
+    w.write_u8(if model.enabled { 1 } else { 0 })?;
 
     Ok(Chunk::Data { id: types::MINF, data: Vec::from(data), little_endian })
 }
@@ -226,6 +226,8 @@ mod test {
         let mut w = writer_for_vec(&mut vec, false);
 
         w.write_utf(10, str).unwrap();
+
+        assert_eq!(&vec, expected);
 
         // NUL-terminated
 

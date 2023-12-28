@@ -15,7 +15,7 @@ use clap::Parser;
 use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
 use l6t::encoder::Encoder;
-use l6t::model::Model;
+use l6t::model::{L6Patch, Model};
 use crate::data::POD2_DATA_MODEL;
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
@@ -82,7 +82,14 @@ fn main() {
 
     if let Some(write_filename) = opts.write {
         let patch = if opts.encode {
-            write_values(values, &POD2_DATA_MODEL)
+            let p = write_values(values, &POD2_DATA_MODEL);
+            // for now write_values doesn't do anything target_devices and meta
+            // fields, so take them from the original patch
+            L6Patch {
+                target_device: patch.target_device,
+                models: p.models,
+                meta: patch.meta,
+            }
         } else {
             patch
         };

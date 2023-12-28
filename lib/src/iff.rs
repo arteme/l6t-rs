@@ -1,4 +1,3 @@
-use std::io;
 /// IFF reader/writer adapted from https://github.com/qpliu/iff-rs with
 /// Line6-specific quirks such as little-endian files and unaligned data
 /// chunks.

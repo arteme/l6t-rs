@@ -16,6 +16,7 @@ pub struct Slot {
     pub params: Vec<Param>
 }
 
+#[derive(Eq, PartialEq)]
 pub enum ParamType {
     Int,
     Float,

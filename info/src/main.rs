@@ -19,7 +19,7 @@ use l6t::model::Model;
 use crate::data::POD2_DATA_MODEL;
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
-use crate::value_store::{group_values, read_values_full};
+use crate::value_store::{group_values, read_values_full, write_values};
 
 fn main() {
     let opts = Opts::parse();
@@ -72,12 +72,30 @@ fn main() {
         println!();
     }
 
-    let errors = errors.borrow();
-    if !errors.is_empty() {
-        println!("ERRORS\n{}", SEP);
-        for error in errors.iter() {
-            println!("{}", error);
+    {
+        let errors = errors.borrow();
+        if !errors.is_empty() {
+            println!("ERRORS\n{}", SEP);
+            for error in errors.iter() {
+                println!("{}", error);
+            }
         }
     }
+
+    /*
+    let p2 = write_values(values, &POD2_DATA_MODEL);
+    let v2 = read_values_full(&p2, &POD2_DATA_MODEL,
+                                  missing_prop_cb, unprocessed_cb);
+    let g2 = group_values(&p2, &v2, &POD2_DATA_MODEL);
+    for group in &g2 {
+        println!("{}\n{}", group.name, SEP);
+
+        for (name, value) in &group.values {
+            println!("{:30} : {:5} : {}", name, value.get_type(), value);
+        }
+        println!();
+    }
+    */
+
 }
 

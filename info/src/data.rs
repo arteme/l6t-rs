@@ -24,10 +24,10 @@ fn bool(id: u32, name: &str) -> Param {
         param_type: ParamType::Bool
     }
 }
-fn fixed_bool(name: &str, value: u32) -> Param {
+fn fixed_int(name: &str, value: u32) -> Param {
     Param::FixedParam {
         name: name.into(),
-        param_type: ParamType::Bool,
+        param_type: ParamType::Int,
         param_value: value
     }
 }
@@ -151,7 +151,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_enable: None,
                         params: vec![
                             slot_enable("reverb_enable"),
-                            fixed_bool("reverb_type", 1),
+                            fixed_int("reverb_type", 1),
                             float(0x100000, "reverb_decay"),
                             float(0x100004, "reverb_density"),
                             float(0x100003, "reverb_diffusion"),
@@ -165,7 +165,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_enable: None,
                         params: vec![
                             slot_enable("reverb_enable"),
-                            fixed_bool("reverb_type", 0),
+                            fixed_int("reverb_type", 0),
                             float(0x100000, "reverb_decay"),
                             float(0x100004, "reverb_density"),
                             float(0x100003, "reverb_diffusion"),
@@ -183,7 +183,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x7fffffff), // effect = bypass
                         fixed_enable: Some(false),
                         params: vec![
-                            fixed_bool("effect_select", 0),
+                            fixed_int("effect_select", 0),
                             float(0x100000, "reverb_decay"),
                         ]
                     },
@@ -192,7 +192,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2000000), // effect = compressor
                         fixed_enable: Some(false),
                         params: vec![
-                            fixed_bool("effect_select", 1),
+                            fixed_int("effect_select", 1),
                             float(0x100000, "compression_ratio"),
                             ignore(0x100001),
                             ignore(0x100002),
@@ -204,7 +204,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2000008), // effect = auto swell
                         fixed_enable: Some(false),
                         params: vec![
-                            fixed_bool("effect_select", 2),
+                            fixed_int("effect_select", 2),
                             float(0x100000, "volume_swell_time"),
                             ignore(0x100001),
                             ignore(0x100002),
@@ -216,7 +216,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2030000), // effect = chorus 1
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 3),
+                            fixed_int("effect_select", 3),
                             slot_enable("effect_enable"),
                             float(0x100000, "chorus_speed"),
                             float(0x100001, "chorus_depth"),
@@ -229,7 +229,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x203000f), // effect = chorus 2
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 4),
+                            fixed_int("effect_select", 4),
                             slot_enable("effect_enable"),
                             float(0x100000, "chorus_speed"),
                             float(0x100001, "chorus_depth"),
@@ -242,7 +242,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2030001), // effect = flanger 1
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 5),
+                            fixed_int("effect_select", 5),
                             slot_enable("effect_enable"),
                             float(0x100000, "flanger_speed"),
                             float(0x100001, "flanger_depth"),
@@ -255,7 +255,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2030010), // effect = flanger 2
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 6),
+                            fixed_int("effect_select", 6),
                             slot_enable("effect_enable"),
                             float(0x100000, "flanger_speed"),
                             float(0x100001, "flanger_depth"),
@@ -268,7 +268,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2030003), // effect = tremolo
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 7),
+                            fixed_int("effect_select", 7),
                             slot_enable("effect_enable"),
                             float(0x100000, "trem_speed"),
                             float(0x100001, "trem_depth"),
@@ -281,7 +281,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2030002), // effect = rotary
                         fixed_enable: None,
                         params: vec![
-                            fixed_bool("effect_select", 8),
+                            fixed_int("effect_select", 8),
                             slot_enable("effect_enable"),
                             float(0x100000, "rotary_speed"),
                             float(0x100001, "rotary_fast_speed"),
@@ -299,7 +299,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2070001),
                         fixed_enable: Some(true),
                         params: vec![
-                            fixed_bool("vol_pedal_position", 1),
+                            fixed_int("vol_pedal_position", 1),
                             float(4, "vol_min"),
                         ]
                     },
@@ -308,7 +308,7 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         fixed_model: Some(0x2070001),
                         fixed_enable: Some(true),
                         params: vec![
-                            fixed_bool("vol_pedal_position", 0),
+                            fixed_int("vol_pedal_position", 0),
                             float(4, "vol_min"),
                         ]
                     },

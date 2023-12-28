@@ -1,8 +1,9 @@
+use std::io;
 /// IFF reader/writer adapted from https://github.com/qpliu/iff-rs with
 /// Line6-specific quirks such as little-endian files and unaligned data
 /// chunks.
 ///
-use std::io::{Error,ErrorKind,Result};
+use std::io::{Error, ErrorKind, Result, Write};
 
 use crate::types::{TypeID, UNALIGNED_CHUNKS};
 
@@ -42,8 +43,8 @@ impl Chunk {
             return Err(Error::new(ErrorKind::InvalidData, "invalid data"));
         }
         let mut id = Self::chunk_id(&data, index, little_endian.unwrap_or(false));
-        let little_endian = if little_endian.is_some() {
-            little_endian.unwrap()
+        let little_endian = if let Some(v) = little_endian {
+            v
         } else {
             if id.is_envelope() {
                 false

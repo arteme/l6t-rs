@@ -1,12 +1,11 @@
-use std::io::{Read, Cursor, Write};
+use std::io;
+use std::io::{Read, Cursor};
 
-use crate::{types, iff};
+use crate::types;
 use crate::iff::Chunk;
-use crate::types::{TypeID};
 use crate::model::*;
 use crate::bytecast;
 use crate::hex::PrintHex;
-use std::io;
 
 pub struct Reader<R: Read> {
     reader: R,
@@ -81,7 +80,7 @@ pub struct Decoder {}
 
 impl Decoder {
     pub fn read(data: &[u8]) -> Result<L6Patch, io::Error> {
-        let mut chunk = iff::Chunk::new(data, None).unwrap();
+        let mut chunk = Chunk::new(data, None).unwrap();
 
         if chunk.has_envelope_type(types::FORM, types::L6PA) {
             // L6T patch file
@@ -102,7 +101,7 @@ impl Decoder {
 
             // sounddiver sometimes places data outsize the FORM/SSLB container
             if chunk.all_chunks().is_empty() && data.len() > 12 {
-                chunk = iff::Chunk::with_size_override(data, data.len() - 8, None).unwrap()
+                chunk = Chunk::with_size_override(data, data.len() - 8, None).unwrap()
             }
 
             for (type_id, chunk) in chunk.all_chunks() {
@@ -119,27 +118,6 @@ impl Decoder {
     }
 }
 
-/// Encode a string into a UTF-16 chunk
-fn encode_utf(str: &String, type_id: TypeID) -> Option<Chunk> {
-    if str.is_empty() { return None }
-
-    let utf16 = str.encode_utf16();
-    let mut vec =  Vec::with_capacity(utf16.size_hint().0);
-    str.encode_utf16().map(|x| vec.write(&x.to_be_bytes()));
-
-    Some(Chunk::Data {
-        id: type_id,
-        data: vec,
-        little_endian: false
-    })
-}
-
-fn encode_date(date: &usize, type_id: TypeID) -> Option<Chunk> {
-    if *date == 0 { return None }
-
-    let str = (*date / 1000).to_string();
-    return encode_utf(&str, type_id);
-}
 
 fn decode_date(str: &str) -> usize {
     match str.parse::<usize>() {
@@ -160,29 +138,6 @@ fn decode_value(data: &[u32;2]) -> Result<Value, io::Error> {
             format!("Unsupported value type {:#x}", data[0]))
         )
     }
-}
-
-/// Encode MetaTags into an unicode info chunk
-fn encode_meta_tags(tags: &MetaTags) -> Chunk {
-    let mut c = Chunk::create(types::LIST, types::UNFO, false);
-    let mut chunks = [
-        encode_utf(&tags.author, types::IAUT),
-        encode_utf(&tags.guitarist, types::IGTR),
-        encode_utf(&tags.band, types::IBND),
-        encode_utf(&tags.song, types::ISNG),
-        encode_utf(&tags.style, types::ISTL),
-        encode_utf(&tags.pickup_style, types::IPUS),
-        encode_utf(&tags.pickup_position, types::IPUP),
-        encode_date(&tags.date, types::IDAT),
-        encode_utf(&tags.amp_name, types::IAMP),
-        encode_utf(&tags.creator_app, types::IAPP),
-        encode_utf(&tags.creator_app_version, types::IAPV),
-        encode_utf(&tags.comments, types::ICMT),
-    ];
-    for chunk in chunks.iter_mut() {
-        chunk.take().map(|chunk| c.append_chunk(chunk));
-    }
-    c
 }
 
 fn read_meta_tags(chunk: &Chunk) -> Result<MetaTags, io::Error> {

@@ -17,6 +17,14 @@ pub struct Model {
     pub params: Vec<ModelParam>
 }
 
+impl PartialEq for Model {
+    fn eq(&self, other: &Self) -> bool {
+        self.slot_id == other.slot_id &&
+            self.model_id == other.model_id &&
+            self.ordinal == other.ordinal
+    }
+}
+
 #[derive(Debug)]
 pub struct ModelParam {
     pub param_id: u32,

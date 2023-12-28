@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use l6t::model::{L6Patch, Model, ModelParam, Value as L6Value};
-use crate::data_model::{DataModel, Param, ParamType};
+use crate::data_model::{DataModel, Param, ParamType, Slot};
 
 #[derive(Clone)]
 pub enum Value {
@@ -55,23 +55,21 @@ impl Value {
 pub type ValueMap = HashMap<String, Value>;
 
 pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
-    read_values_full(patch, model, |_, _| {})
+    read_values_full(patch, model, |_, _| {}, |_| {})
 }
 
 pub fn read_values_full(patch: &L6Patch, model: &DataModel,
-                        mut missing_props_fn: impl FnMut(&Model, &Vec<u32>)) -> ValueMap
+                        mut missing_props_fn: impl FnMut(&Model, &Vec<u32>),
+                        mut unprocessed_model_fn: impl FnMut(&Model)
+) -> ValueMap
 {
     let mut data: HashMap<String, Value> = HashMap::new();
+    let mut processed_models = vec![];
 
     let slots = model.groups.iter().flat_map(|g| &g.slots);
     for slot in slots {
-        let patch_model = patch.models.iter().find(|m| {
-            let slot_matched = m.slot_id == slot.slot_id;
-            let model_matched = slot.fixed_model.map_or(true, |v| m.model_id == v);
-            let enable_matched = slot.fixed_enable.map_or(true, |v| m.enabled == v);
-
-            slot_matched && model_matched && enable_matched
-        });
+        let patch_model = patch.models.iter()
+            .find(|m| model_matches_slot(m, slot));
         let Some(patch_model) = patch_model else {
             continue;
         };
@@ -103,9 +101,16 @@ pub fn read_values_full(patch: &L6Patch, model: &DataModel,
 
             data.insert(name.clone(), value);
         }
+
+        processed_models.push(patch_model);
         if !missing_params.is_empty() {
             missing_props_fn(patch_model, &missing_params);
         }
+    }
+
+    let unprocessed_models = patch.models.iter().filter(|m| !processed_models.contains(m));
+    for model in unprocessed_models {
+        unprocessed_model_fn(model);
     }
 
     data
@@ -164,13 +169,8 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
         let mut group_values = vec![];
 
         for slot in &group.slots {
-            let patch_model = patch.models.iter().find(|m| {
-                let slot_matched = m.slot_id == slot.slot_id;
-                let model_matched = slot.fixed_model.map_or(true, |v| m.model_id == v);
-                let enable_matched = slot.fixed_enable.map_or(true, |v| m.enabled == v);
-
-                slot_matched && model_matched && enable_matched
-            });
+            let patch_model = patch.models.iter()
+                .find(|m| model_matches_slot(m, slot));
             if patch_model.is_none() {
                 continue;
             }
@@ -202,4 +202,12 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
     }
 
     groups
+}
+
+fn model_matches_slot(model: &Model, slot: &Slot) -> bool {
+    let slot_matched = model.slot_id == slot.slot_id;
+    let model_matched = slot.fixed_model.map_or(true, |v| model.model_id == v);
+    let enable_matched = slot.fixed_enable.map_or(true, |v| model.enabled == v);
+
+    slot_matched && model_matched && enable_matched
 }

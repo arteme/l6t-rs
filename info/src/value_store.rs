@@ -92,17 +92,10 @@ impl Value {
 
 pub type ValueMap = HashMap<String, Value>;
 
-pub fn read_values(patch: &L6Patch, model: &DataModel) -> ValueMap {
-    read_values_full(patch, model, |_, _| {}, |_| {})
-}
-
-pub fn read_values_full(patch: &L6Patch, model: &DataModel,
-                        mut missing_props_fn: impl FnMut(&Model, &Vec<u32>),
-                        mut unprocessed_model_fn: impl FnMut(&Model)
-) -> ValueMap
-{
+pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>) {
     let mut data: HashMap<String, Value> = HashMap::new();
     let mut processed_models = vec![];
+    let mut errors = vec![];
 
     let slots = model.groups.iter().flat_map(|g| &g.slots);
     for slot in slots {
@@ -113,6 +106,7 @@ pub fn read_values_full(patch: &L6Patch, model: &DataModel,
         };
 
         let mut missing_params = vec![];
+        let mut processed_params = vec![];
         for param in &slot.params {
             let (name, value) = match param {
                 Param::SlotModel { name } => {
@@ -128,6 +122,7 @@ pub fn read_values_full(patch: &L6Patch, model: &DataModel,
                         missing_params.push(*param_id);
                         continue;
                     };
+                    processed_params.push(*param_id);
                     let value = value_from_l6(&patch_param.value, param_type, model.floats_as_ints);
                     (name, value)
                 }
@@ -142,24 +137,51 @@ pub fn read_values_full(patch: &L6Patch, model: &DataModel,
                         _ => { continue; }
                     }
                 }
-                Param::IgnoreParam { .. } => { continue; }
+                Param::IgnoreParam { param_id } => {
+                    processed_params.push(*param_id);
+                    continue;
+                }
             };
 
             data.insert(name.clone(), value);
         }
+        let unprocessed_params = patch_model.params.iter()
+            .map(|p| p.param_id)
+            .filter(|v| !processed_params.contains(v))
+            .collect::<Vec<_>>();
 
+        let model = patch_model; // for error reporting below
         processed_models.push(patch_model);
         if !missing_params.is_empty() {
-            missing_props_fn(patch_model, &missing_params);
+            errors.push(
+                format!("Slot {:#04x} model={:#08x} ordinal={} missing params: {}",
+                        model.slot_id, model.model_id, model.ordinal,
+                        missing_params.iter().map(|id| format!("{:#x}", id))
+                            .collect::<Vec<_>>().join(", ")
+                )
+            )
+        }
+        if !unprocessed_params.is_empty() {
+            errors.push(
+                format!("Slot {:#04x} model={:#08x} ordinal={} unprocessed params: {}",
+                        model.slot_id, model.model_id, model.ordinal,
+                        unprocessed_params.iter().map(|id| format!("{:#x}", id))
+                            .collect::<Vec<_>>().join(", ")
+                )
+            )
         }
     }
 
     let unprocessed_models = patch.models.iter().filter(|m| !processed_models.contains(m));
     for model in unprocessed_models {
-        unprocessed_model_fn(model);
+        errors.push(
+            format!("Slot {:#04x} model={:#08x} ordinal={} unprocessed",
+                    model.slot_id, model.model_id, model.ordinal
+            )
+        )
     }
 
-    data
+    (data, errors)
 }
 
 pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
@@ -283,11 +305,16 @@ fn value_from_l6(value: &L6Value, param_type: &ParamType, floats_as_ints: bool) 
                 L6Value::Int(v) if floats_as_ints => {
                     Value::Float(f32::from_bits(*v))
                 }
+                // A special case for Int(0): sometimes L6E writes Int(0) for
+                // unused float values, so we do a silent conversion to Float(0)
+                L6Value::Int(v) if *v == 0 => {
+                    Value::Float(0f32)
+                }
                 L6Value::Float(v) => {
                     Value::Float(*v)
                 }
                 _ => {
-                    panic!("Float value expected")
+                    panic!("Float value expected, got {:?}", value)
                 }
             }
         }

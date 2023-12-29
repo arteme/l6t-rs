@@ -19,7 +19,7 @@ use l6t::model::{L6Patch, Model};
 use crate::data::models::{data_model_by_num, data_model_by_patch};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
-use crate::value_store::{group_values, read_values_full, write_values};
+use crate::value_store::{group_values, read_values, write_values};
 
 fn main() {
     let opts = Opts::parse();
@@ -38,26 +38,6 @@ fn main() {
         PrettyPrinter::println(&patch).unwrap();
     }
 
-    let errors = Rc::new(RefCell::new(vec![]));
-    let missing_prop_cb = |model: &Model, missing_props: &Vec<u32>| {
-        let mut errors = errors.borrow_mut();
-        errors.push(
-            format!("Slot {:#04x} model={:#08x} ordinal={} missing params: {}",
-                    model.slot_id, model.model_id, model.ordinal,
-                    missing_props.iter().map(|id| format!("{:#x}", id))
-                        .collect::<Vec<_>>().join(", ")
-            )
-        )
-    };
-    let unprocessed_cb = |model: &Model| {
-        let mut errors = errors.borrow_mut();
-        errors.push(
-            format!("Slot {:#04x} model={:#08x} ordinal={} unprocessed",
-                    model.slot_id, model.model_id, model.ordinal
-            )
-        )
-    };
-
     let model = opts.model
         .and_then(|num|
             data_model_by_num(num)
@@ -69,8 +49,7 @@ fn main() {
         )
         .unwrap();
 
-    let values = read_values_full(&patch, model,
-                                  missing_prop_cb, unprocessed_cb);
+    let (values, errors) = read_values(&patch, model);
     let groups = group_values(&patch, &values, model);
 
     let sep = std::iter::repeat('-').take(65).collect::<String>();
@@ -83,7 +62,6 @@ fn main() {
         println!();
     }
 
-    let errors = errors.borrow();
     if !errors.is_empty() {
         println!("ERRORS\n{}", sep);
         for error in errors.iter() {

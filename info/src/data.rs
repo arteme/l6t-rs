@@ -187,6 +187,9 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         params: vec![
                             fixed_int("effect_select", 0),
                             float(0x100000, "reverb_decay"),
+                            ignore(0x100001),
+                            ignore(0x100002),
+                            ignore(0x100003),
                         ]
                     },
                     Slot {

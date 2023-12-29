@@ -20,6 +20,14 @@ pub static DATA_MODELS: Lazy<HashMap<u32, DataModelInfo>> = Lazy::new(|| {
         (0x030002, DataModelInfo {
             name: "PODxt data model",
             model: &PODXT_DATA_MODEL
+        }),
+        (0x030005, DataModelInfo {
+            name: "PODxt Pro data model",
+            model: &PODXT_DATA_MODEL
+        }),
+        (0x03000a, DataModelInfo {
+            name: "PODxt Live data model",
+            model: &PODXT_DATA_MODEL
         })
     ])
 });

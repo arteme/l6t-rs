@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use crate::data::{fixed_int, fixed_int_for_slot_id, float, ignore, int, slot, slot_enable};
+use crate::data::{bool, fixed_int, fixed_int_for_slot_id, float, ignore, int, slot, slot_enable};
 use crate::data_model::{DataModel, Group, Slot};
 
 pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
@@ -19,6 +19,18 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
 
                         int(0x200006, "pedal_assign"),
                         int(0x200004, "tweak_param_select"),
+
+                        bool(0x200007, "pro.loop_enable"),
+
+                        int(0x200009, "live.variax_300_500_700.model_select"),
+                        int(0x20000a, "live.variax_300_500_700.tone"),
+                        int(0x20000b, "live.variax_acoustic.model_select"),
+                        int(0x20000c, "live.variax_acoustic.mic_pos"),
+                        int(0x20000d, "live.variax_acoustic.comp"),
+                        int(0x20000e, "live.variax_bass.model_select"),
+                        int(0x20000f, "live.variax_bass.blend"),
+                        int(0x200010, "live.variax_bass.bass"),
+                        int(0x200011, "live.variax_bass.treble"),
                     ]
                 },
             ]
@@ -133,7 +145,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         float(0x100001, "mod_param_1"),
                         float(0x100002, "mod_param_2"),
                         float(0x100003, "mod_param_3"),
-                        ignore(0x010004),
+                        ignore(0x100004),
                         float(0x010001, "mod_param_4"),
                         ignore(0x010002), // TODO: float!
                         int(0x200000, "mod_note_select"),
@@ -158,7 +170,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         float(0x100001, "delay_param_1"),
                         float(0x100002, "delay_param_2"),
                         float(0x100003, "delay_param_3"),
-                        ignore(0x010004),
+                        ignore(0x100004),
                         float(0x010001, "delay_param_4"),
                         float(0x010002, "di_xover"),
                         int(0x200000, "delay_note_select"),
@@ -206,10 +218,10 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                         float(0x100005, "eq_3_gain"),
                         float(0x100006, "eq_4_freq"),
                         float(0x100007, "eq_4_gain"),
-                        ignore(0x010008),
-                        ignore(0x010009),
-                        ignore(0x01000a),
-                        ignore(0x01000b),
+                        ignore(0x100008),
+                        ignore(0x100009),
+                        ignore(0x10000a),
+                        ignore(0x10000b),
                     ]
                 },
             ]

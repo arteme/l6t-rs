@@ -16,7 +16,7 @@ use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
 use l6t::encoder::Encoder;
 use l6t::model::{L6Patch, Model};
-use crate::data::POD2_DATA_MODEL;
+use crate::data::models::{data_model_by_num, data_model_by_patch};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
 use crate::value_store::{group_values, read_values_full, write_values};
@@ -58,9 +58,20 @@ fn main() {
         )
     };
 
-    let values = read_values_full(&patch, &POD2_DATA_MODEL,
+    let model = opts.model
+        .and_then(|num|
+            data_model_by_num(num)
+                .or_else(|| panic!("Data model not found by number: {}", num))
+        )
+        .or_else(||
+            data_model_by_patch(&patch)
+                .or_else(|| panic!("Data model not found by device id: {:#x}", patch.target_device.midi_id))
+        )
+        .unwrap();
+
+    let values = read_values_full(&patch, model,
                                   missing_prop_cb, unprocessed_cb);
-    let groups = group_values(&patch, &values, &POD2_DATA_MODEL);
+    let groups = group_values(&patch, &values, model);
 
     let sep = std::iter::repeat('-').take(65).collect::<String>();
     for group in &groups {
@@ -82,7 +93,7 @@ fn main() {
 
     if let Some(write_filename) = opts.write {
         let patch = if opts.encode {
-            let p = write_values(values, &POD2_DATA_MODEL);
+            let p = write_values(values, model);
             // for now write_values doesn't do anything target_devices and meta
             // fields, so take them from the original patch
             L6Patch {

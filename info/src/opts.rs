@@ -20,6 +20,11 @@ pub struct Opts {
     /// File to write L&T patch to
     pub write: Option<PathBuf>,
 
+    #[clap(short = 'm', long)]
+    /// Data model number
+    pub model: Option<usize>,
+
+
     /// File to print out the info for
     pub file: PathBuf
 }

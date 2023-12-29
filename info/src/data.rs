@@ -1,3 +1,6 @@
+mod podxt;
+pub mod models;
+
 use once_cell::sync::Lazy;
 use crate::data_model::{DataModel, Group, Param, ParamType, Slot};
 
@@ -96,11 +99,6 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                             slot("cab_select"), // range?
                         ]
                     },
-                ]
-            },
-            Group {
-                name: "Air".into(),
-                slots: vec![
                     Slot {
                         slot_id: 0x30003,
                         fixed_model: Some(0x20b0002),
@@ -326,7 +324,6 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                             float(2, "wah_top_freq"),
                         ]
                     },
-
                 ]
             },
         ]

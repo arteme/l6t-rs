@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use crate::data::{fixed_int, float, ignore, int, slot, slot_enable};
+use crate::data::{fixed_int, fixed_int_for_slot_id, float, ignore, int, slot, slot_enable};
 use crate::data_model::{DataModel, Group, Slot};
 
 pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
@@ -8,7 +8,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Misc".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x10000,
+                    fixed_slot: Some(0x10000),
                     fixed_model: Some(0x3e700000),
                     fixed_enable: Some(true),
                     params: vec![
@@ -27,7 +27,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Amp".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x30000,
+                    fixed_slot: Some(0x30000),
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![
@@ -48,7 +48,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Cab".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x30001,
+                    fixed_slot: Some(0x30001),
                     fixed_model: None,
                     fixed_enable: Some(true),
                     params: vec![
@@ -57,7 +57,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                     ]
                 },
                 Slot {
-                    slot_id: 0x30003,
+                    fixed_slot: Some(0x30003),
                     fixed_model: Some(0x20b0002),
                     fixed_enable: Some(false),
                     params: vec![
@@ -70,7 +70,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Noise gate".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x20000,
+                    fixed_slot: Some(0x20000),
                     fixed_model: Some(0x20b0000),
                     fixed_enable: None,
                     params: vec![
@@ -85,7 +85,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Compressor".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x50000,
+                    fixed_slot: Some(0x50000),
                     fixed_model: Some(0x20b0001),
                     fixed_enable: None,
                     params: vec![
@@ -100,7 +100,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Stomp".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x20003,
+                    fixed_slot: Some(0x20003),
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![
@@ -120,10 +120,12 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Modulation".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x50003,
+                    fixed_slot: None,
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![
+                        fixed_int_for_slot_id("mod_position", 0, 0x20004),
+                        fixed_int_for_slot_id("mod_position", 1, 0x50003),
                         slot("mod_select"),
                         slot_enable("mod_enable"),
 
@@ -143,10 +145,12 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Delay".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x50004,
+                    fixed_slot: None,
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![
+                        fixed_int_for_slot_id("delay_position", 0, 0x20005),
+                        fixed_int_for_slot_id("delay_position", 1, 0x50004),
                         slot("delay_select"),
                         slot_enable("delay_enable"),
 
@@ -166,10 +170,12 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Reverb".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x50005,
+                    fixed_slot: None,
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![
+                        fixed_int_for_slot_id("reverb_position", 0, 0x20006),
+                        fixed_int_for_slot_id("reverb_position", 1, 0x50005),
                         slot("reverb_select"),
                         slot_enable("reverb_enable"),
 
@@ -186,7 +192,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "EQ".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x30004,
+                    fixed_slot: Some(0x30004),
                     fixed_model: Some(0x20c0002),
                     fixed_enable: None,
                     params: vec![
@@ -212,20 +218,12 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Volume pedal".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x50002, // vol_pedal_position == 1
+                    fixed_slot: None,
                     fixed_model: Some(0x2070000),
                     fixed_enable: Some(true),
                     params: vec![
-                        fixed_int("vol_pedal_position", 1),
-                        float(0x100004, "vol_min"),
-                    ]
-                },
-                Slot {
-                    slot_id: 0x20001, // vol_pedal_position == 0
-                    fixed_model: Some(0x2070000),
-                    fixed_enable: Some(true),
-                    params: vec![
-                        fixed_int("vol_pedal_position", 0),
+                        fixed_int_for_slot_id("vol_pedal_position", 0, 0x20001),
+                        fixed_int_for_slot_id("vol_pedal_position", 1, 0x50002),
                         float(0x100004, "vol_min"),
                     ]
                 },
@@ -235,7 +233,7 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
             name: "Wah pedal".into(),
             slots: vec![
                 Slot {
-                    slot_id: 0x20002,
+                    fixed_slot: Some(0x20002),
                     fixed_model: None,
                     fixed_enable: None,
                     params: vec![

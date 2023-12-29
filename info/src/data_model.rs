@@ -10,7 +10,7 @@ pub struct Group {
 }
 
 pub struct Slot {
-    pub slot_id: u32,
+    pub fixed_slot: Option<u32>,
     pub fixed_model: Option<u32>,
     pub fixed_enable: Option<bool>,
     pub params: Vec<Param>
@@ -38,7 +38,8 @@ pub enum Param {
     FixedParam {
         name: String,
         param_value: u32,
-        param_type: ParamType
+        param_type: ParamType,
+        slot_id: Option<u32>
     },
     IgnoreParam {
         param_id: u32,

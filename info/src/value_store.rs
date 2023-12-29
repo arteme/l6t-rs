@@ -131,8 +131,16 @@ pub fn read_values_full(patch: &L6Patch, model: &DataModel,
                     let value = value_from_l6(&patch_param.value, param_type, model.floats_as_ints);
                     (name, value)
                 }
-                Param::FixedParam { name, param_value, param_type } => {
-                    (name, Value::Int(*param_value))
+                Param::FixedParam { name, param_value, param_type, slot_id } => {
+                    match slot_id {
+                        None => {
+                            (name, Value::Int(*param_value))
+                        }
+                        Some(slot_id) if *slot_id == patch_model.slot_id => {
+                            (name, Value::Int(*param_value))
+                        }
+                        _ => { continue; }
+                    }
                 }
                 Param::IgnoreParam { .. } => { continue; }
             };
@@ -160,24 +168,28 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
 
     let slots = model.groups.iter().flat_map(|g| &g.slots);
     for slot in slots {
-        let fixed_int = slot.params.iter().find_map(|p| {
-            match p {
-                Param::FixedParam { name, param_value, param_type } => {
-                    let Some(v) = values.get(name) else {
-                        return None;
-                    };
-                    // TODO: dubious conversion to u32
-                    if *param_type != ParamType::Int { todo!() }
-                    let Ok(v): Result<u32, _> = v.try_into() else {
-                        return None;
-                    };
+        let fixed_param = slot.params.iter().find(|p| match p {
+                    Param::FixedParam { name, param_value, param_type, .. } => {
+                        let Some(v) = values.get(name) else {
+                            return false;
+                        };
+                        // TODO: dubious conversion to u32
+                        if *param_type != ParamType::Int { todo!() }
+                        let Ok(v): Result<u32, _> = v.try_into() else {
+                            return false;
+                        };
 
-                    Some(v == *param_value)
-                }
+                        v == *param_value
+                    }
+                    _ => false
+                });
+
+        let slot_id = slot.fixed_slot.or(
+            fixed_param.and_then(|p| match p {
+                Param::FixedParam { slot_id, .. } => slot_id.clone(),
                 _ => None
-            }
-        });
-
+            })
+        );
         let model = slot.fixed_model.or_else(|| {
            slot.params.iter().find_map(|p| {
                match p {
@@ -207,14 +219,14 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
             })
         });
 
-        let found_by_fixed_int = fixed_int.unwrap_or(false);
-        let have_model_and_enable = model.is_some() && enable.is_some();
-        let slot_found = found_by_fixed_int || (fixed_int.is_none() && have_model_and_enable);
+        let found_by_fixed_int = fixed_param.is_some();
+        let have_all = slot_id.is_some() && model.is_some() && enable.is_some();
+        let slot_found = found_by_fixed_int || have_all;
         if !slot_found {
             continue;
         }
-        if !have_model_and_enable {
-            panic!("Missing model or enable");
+        if !have_all {
+            panic!("Missing slot id, model or enable");
         }
 
         let mut params = vec![];
@@ -229,7 +241,7 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
                 }
                 Param::Param { name, param_id, param_type } => {
                     let Some(value) = values.get(name) else {
-                        panic!("No value {:?} for param {:#x} for slot {:#x}", name, param_id, slot.slot_id);
+                        panic!("No value {:?} for param {:#x} for slot {:#x}", name, param_id, slot_id.unwrap());
                     };
                     let value = value_to_l6(value, param_type, floats_as_ints);
                     params.push(
@@ -242,7 +254,7 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
         models.push(
             Model {
                 model_id: model.unwrap(),
-                slot_id: slot.slot_id,
+                slot_id: slot_id.unwrap(),
                 enabled: enable.unwrap(),
                 ordinal: 0,
                 params,
@@ -346,6 +358,7 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
 
     for group in &model.groups {
         let mut group_values = vec![];
+        let mut seen_names = vec![];
 
         for slot in &group.slots {
             let patch_model = patch.models.iter()
@@ -362,12 +375,14 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
                     Param::FixedParam { name, .. } => name,
                     Param::IgnoreParam { .. } => { continue }
                 };
+                if seen_names.contains(name) { continue }
                 // We allow values to contain only a portion of props defined in
                 // the slot. "read_values" would have reported missing props errors,
                 // but the app may have chosen to ignore them.
                 if let Some(value) = values.get(name) {
                     group_values.push((name.clone(), value.clone()));
                 }
+                seen_names.push(name.clone());
             }
         }
 
@@ -384,7 +399,13 @@ pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Ve
 }
 
 fn model_matches_slot(model: &Model, slot: &Slot) -> bool {
-    let slot_matched = model.slot_id == slot.slot_id;
+    let mut possible_slot_ids = slot.params.iter().flat_map(|p| match p {
+        Param::FixedParam { slot_id, .. } => slot_id.clone(),
+        _ => None
+    });
+
+    let slot_matched = slot.fixed_slot.map(|v| model.slot_id == v)
+        .unwrap_or_else(|| possible_slot_ids.find(|v| model.slot_id == *v).is_some());
     let model_matched = slot.fixed_model.map_or(true, |v| model.model_id == v);
     let enable_matched = slot.fixed_enable.map_or(true, |v| model.enabled == v);
 

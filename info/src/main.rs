@@ -6,16 +6,14 @@ mod pretty_model;
 mod pretty_iff;
 mod value_store;
 
-use std::cell::RefCell;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::rc::Rc;
 use clap::Parser;
 
 use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
 use l6t::encoder::Encoder;
-use l6t::model::{L6Patch, Model};
+use l6t::model::L6Patch;
 use crate::data::models::{data_model_by_num, data_model_by_patch};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;

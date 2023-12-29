@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // From https://github.com/image-rs/image-tiff/blob/aa13e31894f69a3f5684b53af1954386e5d6fca4/src/bytecast.rs
 
 //! Trivial, internal byte transmutation.

@@ -158,7 +158,7 @@ fn write_meta_tags(tags: &MetaTags, little_endian: bool) -> Result<Chunk, io::Er
         encode_utf(&tags.comments, types::ICMT, little_endian),
     ];
 
-    for mut chunk in chunks {
+    for chunk in chunks {
         let Some(chunk) = chunk else { continue };
         envelope.append_chunk(chunk);
     }

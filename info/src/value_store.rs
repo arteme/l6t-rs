@@ -42,7 +42,7 @@ impl TryInto<bool> for &Value {
     fn try_into(self) -> Result<bool, Self::Error> {
         match self {
             Value::Bool(v) => Ok(*v),
-            Value::Int(v) => Err("Value::Int cannot be converted to bool".into()),
+            Value::Int(_) => Err("Value::Int cannot be converted to bool".into()),
             Value::Float(_) => Err("Value::Float cannot be converted to bool".into()),
             Value::String(_) => Err("Value::String cannot be converted to bool".into())
         }
@@ -126,7 +126,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
                     let value = value_from_l6(&patch_param.value, param_type, model.floats_as_ints);
                     (name, value)
                 }
-                Param::FixedParam { name, param_value, param_type, slot_id } => {
+                Param::FixedParam { name, param_value, slot_id, .. } => {
                     match slot_id {
                         None => {
                             (name, Value::Int(*param_value))

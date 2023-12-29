@@ -4,11 +4,13 @@ pub struct DataModel {
     pub groups: Vec<Group>,
 }
 
+#[derive(Clone)]
 pub struct Group {
     pub name: String,
     pub slots: Vec<Slot>
 }
 
+#[derive(Clone)]
 pub struct Slot {
     pub fixed_slot: Option<u32>,
     pub fixed_model: Option<u32>,
@@ -16,13 +18,14 @@ pub struct Slot {
     pub params: Vec<Param>
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum ParamType {
     Int,
     Float,
     Bool
 }
 
+#[derive(Clone)]
 pub enum Param {
     SlotModel {
         name: String,

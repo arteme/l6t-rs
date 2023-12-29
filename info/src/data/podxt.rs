@@ -1,8 +1,9 @@
 use once_cell::sync::Lazy;
-use crate::data::{bool, fixed_int, fixed_int_for_slot_id, float, ignore, int, slot, slot_enable};
+use crate::data::*;
+use crate::data::models::filter_params_by_prefix;
 use crate::data_model::{DataModel, Group, Slot};
 
-pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
+static PODXT_DATA_MODEL_ALL: Lazy<DataModel> = Lazy::new(|| {
     let groups = vec![
         Group {
             name: "Misc".into(),
@@ -263,4 +264,16 @@ pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
         floats_as_ints: false,
         groups
     }
+});
+
+pub static PODXT_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
+    filter_params_by_prefix(&PODXT_DATA_MODEL_ALL, &["pro.", "live."], &[])
+});
+
+pub static PODXT_PRO_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
+    filter_params_by_prefix(&PODXT_DATA_MODEL_ALL, &["live."], &["pro."])
+});
+
+pub static PODXT_LIVE_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
+    filter_params_by_prefix(&PODXT_DATA_MODEL_ALL, &["pro."], &["live."])
 });

@@ -1,29 +1,24 @@
-pub mod models;
+use crate::model::{Param, ParamType};
 
-mod podxt;
-mod pod2;
-
-use crate::data_model::{Param, ParamType};
-
-fn slot(name: &str) -> Param {
+pub fn slot(name: &str) -> Param {
     Param::SlotModel {
         name: name.into()
     }
 }
-fn slot_enable(name: &str) -> Param {
+pub fn slot_enable(name: &str) -> Param {
     Param::SlotEnable {
         name: name.into()
     }
 }
 
-fn bool(id: u32, name: &str) -> Param {
+pub fn bool(id: u32, name: &str) -> Param {
     Param::Param {
         name: name.into(),
         param_id: id,
         param_type: ParamType::Bool
     }
 }
-fn fixed_int(name: &str, value: u32) -> Param {
+pub fn fixed_int(name: &str, value: u32) -> Param {
     Param::FixedParam {
         name: name.into(),
         param_type: ParamType::Int,
@@ -31,7 +26,7 @@ fn fixed_int(name: &str, value: u32) -> Param {
         slot_id: None
     }
 }
-fn fixed_int_for_slot_id(name: &str, value: u32, slot_id: u32) -> Param {
+pub fn fixed_int_for_slot_id(name: &str, value: u32, slot_id: u32) -> Param {
     Param::FixedParam {
         name: name.into(),
         param_type: ParamType::Int,
@@ -40,15 +35,14 @@ fn fixed_int_for_slot_id(name: &str, value: u32, slot_id: u32) -> Param {
     }
 }
 
-fn int(id: u32, name: &str) -> Param {
+pub fn int(id: u32, name: &str) -> Param {
     Param::Param {
         name: name.into(),
         param_id: id,
         param_type: ParamType::Int
     }
 }
-
-fn float(id: u32, name: &str) -> Param {
+pub fn float(id: u32, name: &str) -> Param {
     Param::Param {
         name: name.into(),
         param_id: id,
@@ -56,7 +50,7 @@ fn float(id: u32, name: &str) -> Param {
     }
 }
 
-fn ignore(id: u32) -> Param {
+pub fn ignore(id: u32) -> Param {
     Param::IgnoreParam {
         param_id: id,
     }

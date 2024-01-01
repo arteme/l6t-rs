@@ -122,6 +122,14 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 [[package]]
 name = "l6t"
 version = "0.1.0"
+dependencies = [
+ "l6t-file",
+ "l6t-symbolic",
+]
+
+[[package]]
+name = "l6t-file"
+version = "0.1.0"
 
 [[package]]
 name = "l6t-info"
@@ -130,6 +138,13 @@ dependencies = [
  "clap",
  "l6t",
  "once_cell",
+]
+
+[[package]]
+name = "l6t-symbolic"
+version = "0.1.0"
+dependencies = [
+ "l6t-file",
 ]
 
 [[package]]

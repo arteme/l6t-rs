@@ -1,5 +1,5 @@
 [package]
-name = "l6t"
+name = "l6t-symbolic"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -7,7 +7,3 @@ rust-version.workspace = true
 
 [dependencies]
 file = { package = "l6t-file", path = "../file" }
-symbolic = { package = "l6t-symbolic", path = "../symbolic", optional = true }
-
-[features]
-default = ["symbolic"]

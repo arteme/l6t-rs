@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::default;
 use std::fmt::{Display, Formatter};
-use l6t::model::{L6Patch, Model, ModelParam, Value as L6Value};
-use crate::data_model::{DataModel, Param, ParamType, Slot};
+use file::model::{L6Patch, Model, ModelParam, Value as L6Value};
+use crate::model::{DataModel, Param, ParamType, Slot};
 
 #[derive(Clone)]
 pub enum Value {

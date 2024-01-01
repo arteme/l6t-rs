@@ -1,11 +1,11 @@
-use once_cell::sync::Lazy;
-use crate::data::*;
-use crate::data_model::{DataModel, Group, Slot};
+use std::sync::OnceLock;
+use crate::data::shorthand::*;
+use crate::model::{DataModel, Group, Slot};
 
-pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
-    DataModel {
-        floats_as_ints: true,
-        groups: vec![
+pub fn pod2_data_model() -> &'static DataModel {
+    static MODEL: OnceLock<DataModel> = OnceLock::new();
+    MODEL.get_or_init(|| {
+        let groups = vec![
             Group {
                 name: "Amp".into(),
                 slots: vec![
@@ -265,6 +265,12 @@ pub static POD2_DATA_MODEL: Lazy<DataModel> = Lazy::new(|| {
                     },
                 ]
             },
-        ]
-    }
-});
+
+        ];
+
+        DataModel {
+            floats_as_ints: true,
+            groups
+        }
+    })
+}

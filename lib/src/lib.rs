@@ -1,9 +1,4 @@
-pub mod iff;
-pub mod types;
-pub mod decoder;
-pub mod encoder;
-pub mod model;
+pub use file::*;
 
-mod bytecast;
-mod hex;
-
+#[cfg(feature = "symbolic")]
+pub use symbolic;

@@ -1,53 +1,59 @@
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
-use l6t::model::L6Patch;
+use std::sync::OnceLock;
+use file::model::L6Patch;
 
 use crate::data::pod2::*;
 use crate::data::podxt::*;
-use crate::data_model::{DataModel, Group, Param, Slot};
+use crate::model::{DataModel, Group, Param, Slot};
 
 pub struct DataModelInfo {
     name: &'static str,
     model: &'static DataModel
 }
 
-pub static DATA_MODELS: Lazy<HashMap<u32, DataModelInfo>> = Lazy::new(|| {
+fn data_models() -> &'static HashMap<u32, DataModelInfo> {
+    static MODELS: OnceLock<HashMap<u32, DataModelInfo>> = OnceLock::new();
+    MODELS.get_or_init(||
+        HashMap::from([
+            (0x000200, DataModelInfo {
+                name: "POD 2.0 / POD Pro model",
+                model: pod2_data_model(),
+            }),
+            (0x030002, DataModelInfo {
+                name: "PODxt data model",
+                model: podxt_data_model(),
+            }),
+            (0x030005, DataModelInfo {
+                name: "PODxt Pro data model",
+                model: podxt_pro_data_model(),
+            }),
+            (0x03000a, DataModelInfo {
+                name: "PODxt Live data model",
+                model: podxt_live_data_model()
+            })
+        ])
+    )
+}
 
-    HashMap::from([
-        (0x000200, DataModelInfo {
-            name: "POD 2.0 / POD Pro model",
-            model: &POD2_DATA_MODEL
-        }),
-        (0x030002, DataModelInfo {
-            name: "PODxt data model",
-            model: &PODXT_DATA_MODEL,
-        }),
-        (0x030005, DataModelInfo {
-            name: "PODxt Pro data model",
-            model: &PODXT_PRO_DATA_MODEL,
-        }),
-        (0x03000a, DataModelInfo {
-            name: "PODxt Live data model",
-            model: &PODXT_LIVE_DATA_MODEL,
-        })
-    ])
-});
+fn data_model_keys() -> &'static Vec<u32> {
+    static KEYS: OnceLock<Vec<u32>> = OnceLock::new();
+    KEYS.get_or_init(|| {
+        let mut keys = data_models().keys().cloned().collect::<Vec<_>>();
+        keys.sort();
 
-pub static DATA_MODEL_KEYS: Lazy<Vec<u32>> = Lazy::new(|| {
-    let mut keys = DATA_MODELS.keys().cloned().collect::<Vec<_>>();
-    keys.sort();
-
-    keys
-});
+        keys
+    })
+}
 
 pub fn data_model_by_id(id: u32) -> Option<&'static DataModel> {
-    DATA_MODELS
+    data_models()
         .get(&id)
         .map(|i| i.model)
 }
 
 pub fn data_model_by_num(num: usize) -> Option<&'static DataModel> {
-    DATA_MODEL_KEYS.get(num)
+    data_model_keys()
+        .get(num)
         .and_then(|key| data_model_by_id(*key))
 }
 

@@ -1,10 +1,7 @@
 mod opts;
-mod data_model;
-mod data;
 mod pretty;
 mod pretty_model;
 mod pretty_iff;
-mod value_store;
 
 use std::fs::File;
 use std::io::{Read, Write};
@@ -14,10 +11,10 @@ use l6t::iff::Chunk;
 use l6t::decoder::Decoder;
 use l6t::encoder::Encoder;
 use l6t::model::L6Patch;
-use crate::data::models::{data_model_by_num, data_model_by_patch};
+use l6t::symbolic::data::{data_model_by_num, data_model_by_patch};
+use l6t::symbolic::value::{group_values, read_values, write_values};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
-use crate::value_store::{group_values, read_values, write_values};
 
 fn main() {
     let opts = Opts::parse();

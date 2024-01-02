@@ -4,5 +4,10 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+description = "A part of l6t library: reading, writing and deconding for L6T IFF data"
 
 [dependencies]

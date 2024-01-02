@@ -4,6 +4,11 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+description = "A part of l6t library: symbolic data model for different known devices"
 
 [dependencies]
-file = { package = "l6t-file", path = "../file" }
+file = { package = "l6t-file", version = "0", path = "../file" }

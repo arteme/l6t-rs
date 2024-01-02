@@ -4,10 +4,16 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+description = "A library for reading and writing files used by Line6 Edit, namely Line6 Tone (l6t), Line6 Bundle (l6b), Line6 Tone Collection (l6c) and Sounddiver Library (lib)."
+categories = [ "encoding", "multimedia::encoding" ]
 
 [dependencies]
-file = { package = "l6t-file", path = "../file" }
-symbolic = { package = "l6t-symbolic", path = "../symbolic", optional = true }
+file = { package = "l6t-file", version = "0", path = "../file" }
+symbolic = { package = "l6t-symbolic", version = "0", path = "../symbolic", optional = true }
 
 [features]
 default = ["symbolic"]

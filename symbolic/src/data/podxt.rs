@@ -74,7 +74,7 @@ fn podxt_data_model_all() -> &'static DataModel {
                     Slot {
                         fixed_slot: Some(0x30003),
                         fixed_model: Some(0x20b0002),
-                        fixed_enable: Some(false),
+                        fixed_enable: None,
                         params: vec![
                             float(0x100000, "room"),
                         ]

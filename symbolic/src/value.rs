@@ -256,13 +256,13 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
         });
 
         let found_by_fixed_int = fixed_param.is_some();
-        let have_all = slot_id.is_some() && model.is_some() && enable.is_some();
+        let have_all = slot_id.is_some() && model.is_some();
         let slot_found = found_by_fixed_int || have_all;
         if !slot_found {
             continue;
         }
         if !have_all {
-            panic!("Missing slot id, model or enable");
+            panic!("Missing slot id or model");
         }
 
         let mut params = vec![];
@@ -291,7 +291,7 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
             Model {
                 model_id: model.unwrap(),
                 slot_id: slot_id.unwrap(),
-                enabled: enable.unwrap(),
+                enabled: enable.unwrap_or(false),
                 ordinal: 0,
                 params,
             }

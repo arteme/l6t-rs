@@ -106,6 +106,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
         };
 
         let mut missing_params = vec![];
+        let mut invalid_params = vec![];
         let mut processed_params = vec![];
         for param in &slot.params {
             let (name, value) = match param {
@@ -124,7 +125,12 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
                     };
                     processed_params.push(*param_id);
                     let value = value_from_l6(&patch_param.value, param_type, model.floats_as_ints);
-                    (name, value)
+                    if let Ok(value) = value {
+                        (name, value)
+                    } else {
+                        invalid_params.push(*param_id);
+                        continue
+                    }
                 }
                 Param::FixedParam { name, param_value, slot_id, .. } => {
                     match slot_id {
@@ -157,6 +163,15 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
                 format!("Slot {:#04x} model={:#08x} ordinal={} missing params: {}",
                         model.slot_id, model.model_id, model.ordinal,
                         missing_params.iter().map(|id| format!("{:#x}", id))
+                            .collect::<Vec<_>>().join(", ")
+                )
+            )
+        }
+        if !invalid_params.is_empty() {
+            errors.push(
+                format!("Slot {:#04x} model={:#08x} ordinal={} params with invalid format: {}",
+                        model.slot_id, model.model_id, model.ordinal,
+                        invalid_params.iter().map(|id| format!("{:#x}", id))
                             .collect::<Vec<_>>().join(", ")
                 )
             )
@@ -290,44 +305,44 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
     }
 }
 
-fn value_from_l6(value: &L6Value, param_type: &ParamType, floats_as_ints: bool) -> Value {
+fn value_from_l6(value: &L6Value, param_type: &ParamType, floats_as_ints: bool) -> Result<Value, String> {
     match param_type {
         ParamType::Int => {
             match value {
-                L6Value::Int(v) => { Value::Int(*v) }
+                L6Value::Int(v) => { Ok(Value::Int(*v)) }
                 _ => {
-                    panic!("Int value expected")
+                    Err(format!("Int value expected, got {:?}", value))
                 }
             }
         }
         ParamType::Float => {
             match value {
                 L6Value::Int(v) if floats_as_ints => {
-                    Value::Float(f32::from_bits(*v))
+                    Ok(Value::Float(f32::from_bits(*v)))
                 }
                 // A special case for Int(0): sometimes L6E writes Int(0) for
                 // unused float values, so we do a silent conversion to Float(0)
                 L6Value::Int(v) if *v == 0 => {
-                    Value::Float(0f32)
+                    Ok(Value::Float(0f32))
                 }
                 L6Value::Float(v) => {
-                    Value::Float(*v)
+                    Ok(Value::Float(*v))
                 }
                 _ => {
-                    panic!("Float value expected, got {:?}", value)
+                    Err(format!("Float value expected, got {:?}", value))
                 }
             }
         }
         ParamType::Bool => {
             match value {
                 L6Value::Int(v) if *v == 0 => {
-                    Value::Bool(false)
+                    Ok(Value::Bool(false))
                 }
                 L6Value::Int(v) if *v == 1 => {
-                    Value::Bool(true)
+                    Ok(Value::Bool(true))
                 }
                 _ => {
-                    panic!("Bool value expected")
+                    Err(format!("Bool value expected, got {:?}", value))
                 }
             }
         }

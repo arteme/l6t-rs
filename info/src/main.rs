@@ -2,6 +2,7 @@ mod opts;
 mod pretty;
 mod pretty_model;
 mod pretty_iff;
+mod pretty_info;
 
 use std::fmt::Write as FmtWrite;
 use std::fs::File;
@@ -13,10 +14,26 @@ use l6t::iff::Chunk;
 use l6t::decoder::{Decoder, DecoderResult};
 use l6t::encoder::Encoder;
 use l6t::model::L6Patch;
-use l6t::symbolic::data::{data_model_by_num, data_model_by_patch, data_model_info_by_id, data_model_keys};
-use l6t::symbolic::value::{group_values, read_values, write_values};
+use l6t::symbolic::data::{data_model_by_id, data_model_by_num, data_model_info_by_id, data_model_keys};
+use l6t::symbolic::model::DataModel;
+use l6t::symbolic::value::{group_values, read_values, ValueGroup, write_values};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
+
+pub struct DecodedPatch {
+    patch: L6Patch,
+    values: Vec<ValueGroup>,
+    errors: Vec<String>
+}
+
+pub struct DecodedBank {
+    name: String,
+    patches: Vec<DecodedPatch>
+}
+
+pub struct DecodedBundle {
+    banks: Vec<DecodedBank>
+}
 
 fn get_help_text() -> &'static String {
     static STR: OnceLock<String> = OnceLock::new();
@@ -31,6 +48,55 @@ fn get_help_text() -> &'static String {
 
         s
     })
+}
+
+fn get_model(patch: &L6Patch, model_num: &Option<usize>) -> &'static DataModel {
+    model_num
+        .and_then(|num|
+            data_model_by_num(num)
+                .or_else(|| panic!("Data model not found by number: {}", num))
+        )
+        .or_else(|| {
+            let id = patch.target_device.midi_id;
+            data_model_by_id(id)
+                .or_else(|| panic!("Data model not found by device id: {:#x}", id))
+        })
+        .unwrap()
+
+}
+
+fn decoder_result_to_bundle(dr: DecoderResult, model_num: Option<usize>) -> DecodedBundle {
+    let patch_to_decoded = |patch: L6Patch| {
+        let model = get_model(&patch, &model_num);
+
+        let (values, errors) = read_values(&patch, model);
+        let values = group_values(&patch, &values, model);
+
+        DecodedPatch { patch, values, errors }
+    };
+
+
+    match dr {
+        DecoderResult::Patch(p) => {
+            let p = patch_to_decoded(p);
+            let bank = DecodedBank { name: "".into(), patches: vec![ p ] };
+            DecodedBundle {
+                banks: vec![ bank ]
+            }
+        }
+        DecoderResult::Bundle(b) => {
+            let mut banks = vec![];
+            for b in b.banks {
+                let name = b.name;
+                let patches = b.patches.into_iter()
+                    .map(patch_to_decoded)
+                    .collect();
+                banks.push(DecodedBank { name, patches });
+            }
+            DecodedBundle { banks }
+        }
+    }
+
 }
 
 
@@ -51,6 +117,7 @@ fn main() -> Result<(), clap::error::Error> {
     }
 
     let patch = Decoder::read(v.as_slice()).unwrap();
+    /*
     let patch = match patch {
         DecoderResult::Patch(patch) => patch,
         _ => {
@@ -60,38 +127,12 @@ fn main() -> Result<(), clap::error::Error> {
     if opts.dump_patch {
         PrettyPrinter::println(&patch).unwrap();
     }
+    */
 
-    let model = opts.model
-        .and_then(|num|
-            data_model_by_num(num)
-                .or_else(|| panic!("Data model not found by number: {}", num))
-        )
-        .or_else(||
-            data_model_by_patch(&patch)
-                .or_else(|| panic!("Data model not found by device id: {:#x}", patch.target_device.midi_id))
-        )
-        .unwrap();
+    let bundle = decoder_result_to_bundle(patch, opts.model);
+    PrettyPrinter::println(&bundle).unwrap();
 
-    let (values, errors) = read_values(&patch, model);
-    let groups = group_values(&patch, &values, model);
-
-    let sep = std::iter::repeat('-').take(65).collect::<String>();
-    for group in &groups {
-        println!("{}\n{}", group.name, sep);
-
-        for (name, value) in &group.values {
-            println!("{:30} : {:5} : {}", name, value.get_type(), value);
-        }
-        println!();
-    }
-
-    if !errors.is_empty() {
-        println!("ERRORS\n{}", sep);
-        for error in errors.iter() {
-            println!("{}", error);
-        }
-    }
-
+/*
     if let Some(write_filename) = opts.write {
         let patch = if opts.encode {
             let p = write_values(values, model);
@@ -110,7 +151,7 @@ fn main() -> Result<(), clap::error::Error> {
         File::create(write_filename).unwrap()
             .write(&vec).unwrap();
     }
-
+*/
     Ok(())
 }
 

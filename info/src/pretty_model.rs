@@ -1,7 +1,5 @@
-use std::fmt;
-use std::fmt::Write;
 use l6t::model;
-use crate::pretty::{Pretty, PrettyPrinter};
+use crate::pretty::*;
 
 impl Pretty for model::L6Patch {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {

@@ -81,7 +81,7 @@ pub struct Decoder {}
 
 pub enum DecoderResult {
     Patch(L6Patch),
-    Nothing()
+    Bundle(L6Bundle),
 }
 
 impl Decoder {
@@ -90,6 +90,7 @@ impl Decoder {
 
         let readers = vec![
             read_l6patch,
+            read_l6bundle,
             read_sounddiver_lib
         ];
         for reader in readers {
@@ -104,12 +105,20 @@ impl Decoder {
 }
 
 fn read_l6patch(chunk: &Chunk, _data: &[u8]) -> Result<DecoderResult, Error> {
-    if !chunk.has_envelope_type(types::FORM, types::L6PA) {
+    if !chunk.has_envelope_type(types::FORM, types::L6PA) &&
+        !chunk.has_envelope_type(types::FORM, types::L6AS) &&
+        !chunk.has_envelope_type(types::FORM, types::L6FS) {
         return Err(Error::FormatNotSupported());
     }
 
     // L6T patch file
     let mut patch: L6Patch = Default::default();
+    patch.patch_type = match chunk.id() {
+        types::L6PA => PatchType::Patch,
+        types::L6AS => PatchType::AmpSetup,
+        types::L6FS => PatchType::FxSetup,
+        _ => unreachable!()
+    };
     let little_endian = false;
 
     for (type_id, chunk) in chunk.all_chunks() {
@@ -121,6 +130,44 @@ fn read_l6patch(chunk: &Chunk, _data: &[u8]) -> Result<DecoderResult, Error> {
         }
     }
     Ok(DecoderResult::Patch(patch))
+}
+
+fn read_l6bundle(chunk: &Chunk, _data: &[u8]) -> Result<DecoderResult, Error> {
+    if !chunk.has_envelope_type(types::FORM, types::L6BA) &&
+        !chunk.has_envelope_type(types::FORM, types::L6CO) {
+        return Err(Error::FormatNotSupported());
+    }
+
+    // L6B, L6C file
+    let bundle_type = match chunk.id() {
+        types::L6BA => BundleType::Bundle,
+        types::L6CO => BundleType::Collection,
+        _ => unreachable!()
+    };
+
+    let mut banks = vec![];
+    for (type_id, chunk) in chunk.all_chunks() {
+        match type_id {
+            types::HEAD => {
+                // not actually using head chunk for anything
+                read_head(chunk, false)?;
+            },
+            types::BANK if bundle_type == BundleType::Bundle => {
+                let bank = read_bank(chunk, false)?;
+                banks.push(bank);
+            }
+            types::FLDR if bundle_type == BundleType::Collection => {
+                let bank = read_bank(chunk, false)?;
+                banks.push(bank);
+            }
+            //types::UNFO => { patch.meta = read_meta_tags(chunk)?; },
+            //types::PINF => { patch.target_device = read_target_device(chunk, little_endian)?; },
+            _ => {}
+        }
+    }
+
+    let batch = L6Bundle { bundle_type, banks };
+    Ok(DecoderResult::Bundle(batch))
 }
 
 fn read_sounddiver_lib(chunk: &Chunk, data: &[u8]) -> Result<DecoderResult, Error> {
@@ -161,10 +208,7 @@ fn decode_date(str: &str) -> usize {
 fn decode_value(data: &[u32;2]) -> Result<Value, io::Error> {
     match data[0] {
         0 => Ok(Value::Int(data[1])),
-        1 => {
-            let f: f32 = unsafe { std::mem::transmute_copy(&data[1]) };
-            Ok(Value::Float(f))
-        }
+        1 => Ok(Value::Float(f32::from_bits(data[1]))),
         _ => Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Unsupported value type {:#x}", data[0]))
@@ -194,6 +238,62 @@ fn read_meta_tags(chunk: &Chunk) -> Result<MetaTags, io::Error> {
     }
 
     Ok(tags)
+}
+
+fn read_head(chunk: &Chunk, little_endian: bool) -> Result<BatchHead, io::Error> {
+    let data = match chunk {
+        Chunk::Data { data, .. } => data,
+        _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Data chunk expected"))
+    };
+
+    let mut r = reader_for_slice(data, little_endian);
+    let version = r.read_u32()?;
+
+    Ok(BatchHead { version })
+}
+
+fn read_bank(chunk: &Chunk, little_endian: bool) -> Result<Bank, Error> {
+    let mut bank = Bank::default();
+    for (type_id, chunk) in chunk.all_chunks() {
+        match type_id {
+            types::BINF => {
+                let bank_info = read_bank_info(chunk, little_endian)?;
+                bank.name = bank_info.name;
+            }
+            types::L6PA | types::L6AS | types::L6FS => {
+                let res = read_l6patch(chunk, &[0u8])?;
+                let patch = match res {
+                    DecoderResult::Patch(patch) => { patch }
+                    _ => {
+                        return Err(io::Error::new(io::ErrorKind::InvalidData, "incorrect decoder output").into());
+                    }
+                };
+                bank.patches.push(patch);
+
+            }
+            _ => {
+                println!("{:?}", type_id);
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "chunk not supported").into());
+            }
+        }
+    }
+
+    Ok(bank)
+}
+
+fn read_bank_info(chunk: &Chunk, little_endian: bool) -> Result<BankInfo, io::Error> {
+    let data = match chunk {
+        Chunk::Data { data, .. } => data,
+        _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Data chunk expected"))
+    };
+
+    if data.len() != 68 { return Err(io::Error::new(io::ErrorKind::InvalidInput, "Incorrect chunk length")); }
+
+    let mut r = reader_for_slice(data, little_endian);
+    r.read_u32()?;
+    let name = r.read_utf(32)?;
+
+    Ok(BankInfo { name })
 }
 
 fn read_target_device(chunk: &Chunk, little_endian: bool) -> Result<TargetDevice, io::Error> {

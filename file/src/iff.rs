@@ -233,6 +233,13 @@ impl Chunk {
         }
         vec
     }
+
+    pub fn id(&self) -> TypeID {
+        match self {
+            &Chunk::Data { id, .. } => id,
+            &Chunk::Envelope { id, .. } => id,
+        }
+    }
 }
 
 impl std::fmt::Debug for Chunk {

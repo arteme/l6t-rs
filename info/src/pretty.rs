@@ -1,4 +1,5 @@
-use std::fmt;
+pub use std::fmt;
+pub use std::fmt::Write;
 
 pub struct PrettyPrinter {
     pub indent: usize,

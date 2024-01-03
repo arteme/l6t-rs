@@ -52,11 +52,47 @@ pub struct MetaTags {
     pub comments: String
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum PatchType {
+    #[default]
+    Patch,
+    AmpSetup,
+    FxSetup
+}
+
+#[derive(Debug, Default)]
 pub struct L6Patch {
+    pub patch_type: PatchType,
     pub target_device: TargetDevice,
     pub models: Vec<Model>,
     pub meta: MetaTags
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum BundleType {
+    #[default]
+    Bundle,
+    Collection
+}
+
+#[derive(Debug, Default)]
+pub struct L6Bundle {
+    pub bundle_type: BundleType,
+    pub banks: Vec<Bank>
+}
+
+pub(crate) struct BatchHead {
+    pub version: u32
+}
+
+#[derive(Debug, Default)]
+pub struct Bank {
+    pub name: String,
+    pub patches: Vec<L6Patch>
+}
+
+pub(crate) struct BankInfo {
+    pub name: String
 }
 
 impl Default for MetaTags {
@@ -84,16 +120,6 @@ impl Default for TargetDevice {
             midi_id: 0,
             name: "".to_string(),
             version: 0
-        }
-    }
-}
-
-impl Default for L6Patch {
-    fn default() -> Self {
-        L6Patch {
-            target_device: Default::default(),
-            models: Default::default(),
-            meta: Default::default()
         }
     }
 }

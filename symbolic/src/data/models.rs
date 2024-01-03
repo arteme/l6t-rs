@@ -62,10 +62,6 @@ pub fn data_model_by_num(num: usize) -> Option<&'static DataModel> {
         .and_then(|key| data_model_by_id(*key))
 }
 
-pub fn data_model_by_patch(patch: &L6Patch) -> Option<&DataModel> {
-    data_model_by_id(patch.target_device.midi_id)
-}
-
 pub fn filter_params<F>(model: &DataModel, filter_fn: F) -> DataModel
     where F: Fn(&Param) -> Option<Param>
 {

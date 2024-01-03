@@ -6,4 +6,5 @@ pub mod model;
 
 mod bytecast;
 mod hex;
+mod error;
 

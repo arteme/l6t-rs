@@ -5,6 +5,7 @@ use crate::types;
 use crate::iff::Chunk;
 use crate::model::*;
 use crate::bytecast;
+use crate::error::Error;
 use crate::hex::PrintHex;
 
 pub struct Reader<R: Read> {
@@ -78,44 +79,75 @@ fn reader_for_slice(slice: &[u8], little_endian: bool) -> Reader<Cursor<&[u8]>> 
 
 pub struct Decoder {}
 
+pub enum DecoderResult {
+    Patch(L6Patch),
+    Nothing()
+}
+
 impl Decoder {
-    pub fn read(data: &[u8]) -> Result<L6Patch, io::Error> {
-        let mut chunk = Chunk::from_data(data, None)?;
+    pub fn read(data: &[u8]) -> Result<DecoderResult, Error> {
+        let chunk = Chunk::from_data(data, None)?;
 
-        if chunk.has_envelope_type(types::FORM, types::L6PA) {
-            // L6T patch file
-            let mut patch: L6Patch = Default::default();
-            let little_endian = false;
-
-            for (type_id, chunk) in chunk.all_chunks() {
-                match type_id {
-                    types::PATC => { patch.models = read_models(chunk)?; },
-                    types::UNFO => { patch.meta = read_meta_tags(chunk)?; },
-                    types::PINF => { patch.target_device = read_target_device(chunk, little_endian)?; },
-                    _ => {}
-                }
+        let readers = vec![
+            read_l6patch,
+            read_sounddiver_lib
+        ];
+        for reader in readers {
+            match reader(&chunk, data) {
+                Err(Error::FormatNotSupported()) => continue,
+                res @ _ => return res
             }
-            return Ok(patch);
-        } else if chunk.has_envelope_type(types::FORM, types::SSLB) {
-            // SoundDiver lib
-
-            // sounddiver sometimes places data outsize the FORM/SSLB container
-            if chunk.all_chunks().is_empty() && data.len() > 12 {
-                chunk = Chunk::from_data_with_size(data, data.len() - 8, None).unwrap()
-            }
-
-            for (type_id, chunk) in chunk.all_chunks() {
-                match type_id {
-                    types::LENT => { read_sslb_entry(chunk)?; },
-                    //types::LHDR | types::WSEQ => {}, // ignore
-                    _ => {}
-                }
-            }
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "ok"))
         }
 
-        Err(io::Error::new(io::ErrorKind::InvalidInput, "cannot parse file"))
+        Err(Error::FormatNotSupported())
     }
+}
+
+fn read_l6patch(chunk: &Chunk, _data: &[u8]) -> Result<DecoderResult, Error> {
+    if !chunk.has_envelope_type(types::FORM, types::L6PA) {
+        return Err(Error::FormatNotSupported());
+    }
+
+    // L6T patch file
+    let mut patch: L6Patch = Default::default();
+    let little_endian = false;
+
+    for (type_id, chunk) in chunk.all_chunks() {
+        match type_id {
+            types::PATC => { patch.models = read_models(chunk)?; },
+            types::UNFO => { patch.meta = read_meta_tags(chunk)?; },
+            types::PINF => { patch.target_device = read_target_device(chunk, little_endian)?; },
+            _ => {}
+        }
+    }
+    Ok(DecoderResult::Patch(patch))
+}
+
+fn read_sounddiver_lib(chunk: &Chunk, data: &[u8]) -> Result<DecoderResult, Error> {
+    if !chunk.has_envelope_type(types::FORM, types::SSLB) {
+        return Err(Error::FormatNotSupported());
+    }
+
+    // SoundDiver lib
+
+    // sounddiver sometimes places data outsize the FORM/SSLB container
+    let correct_chunk;
+    let chunk = if chunk.all_chunks().is_empty() && data.len() > 12 {
+        correct_chunk = Chunk::from_data_with_size(data, data.len() - 8, None).unwrap();
+        &correct_chunk
+    } else {
+        chunk
+    };
+
+    for (type_id, chunk) in chunk.all_chunks() {
+        match type_id {
+            types::LENT => { read_sslb_entry(chunk)?; },
+            //types::LHDR | types::WSEQ => {}, // ignore
+            _ => {}
+        }
+    }
+
+    todo!()
 }
 
 

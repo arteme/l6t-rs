@@ -7,8 +7,8 @@ use crate::data::podxt::*;
 use crate::model::{DataModel, Group, Param, Slot};
 
 pub struct DataModelInfo {
-    name: &'static str,
-    model: &'static DataModel
+    pub name: &'static str,
+    pub model: &'static DataModel
 }
 
 fn data_models() -> &'static HashMap<u32, DataModelInfo> {
@@ -35,7 +35,7 @@ fn data_models() -> &'static HashMap<u32, DataModelInfo> {
     )
 }
 
-fn data_model_keys() -> &'static Vec<u32> {
+pub fn data_model_keys() -> &'static Vec<u32> {
     static KEYS: OnceLock<Vec<u32>> = OnceLock::new();
     KEYS.get_or_init(|| {
         let mut keys = data_models().keys().cloned().collect::<Vec<_>>();
@@ -43,6 +43,11 @@ fn data_model_keys() -> &'static Vec<u32> {
 
         keys
     })
+}
+
+pub fn data_model_info_by_id(id: u32) -> Option<&'static DataModelInfo> {
+    data_models()
+        .get(&id)
 }
 
 pub fn data_model_by_id(id: u32) -> Option<&'static DataModel> {

@@ -11,3 +11,4 @@ homepage.workspace = true
 description = "A part of l6t library: reading, writing and deconding for L6T IFF data"
 
 [dependencies]
+thiserror = "1"

@@ -3,21 +3,43 @@ mod pretty;
 mod pretty_model;
 mod pretty_iff;
 
+use std::fmt::Write as FmtWrite;
 use std::fs::File;
 use std::io::{Read, Write};
-use clap::Parser;
+use std::sync::OnceLock;
+use clap::{CommandFactory, FromArgMatches};
 
 use l6t::iff::Chunk;
-use l6t::decoder::Decoder;
+use l6t::decoder::{Decoder, DecoderResult};
 use l6t::encoder::Encoder;
 use l6t::model::L6Patch;
-use l6t::symbolic::data::{data_model_by_num, data_model_by_patch};
+use l6t::symbolic::data::{data_model_by_num, data_model_by_patch, data_model_info_by_id, data_model_keys};
 use l6t::symbolic::value::{group_values, read_values, write_values};
 use crate::opts::Opts;
 use crate::pretty::PrettyPrinter;
 
-fn main() {
-    let opts = Opts::parse();
+fn get_help_text() -> &'static String {
+    static STR: OnceLock<String> = OnceLock::new();
+    STR.get_or_init(|| {
+        let mut s = String::new();
+
+        writeln!(s, "Supported data models (-m):").unwrap();
+        for (n, id) in data_model_keys().iter().enumerate() {
+            let info = data_model_info_by_id(*id).unwrap();
+            writeln!(s, "    [{}] {:#010x} {}", n, id, info.name).unwrap();
+        }
+
+        s
+    })
+}
+
+
+fn main() -> Result<(), clap::error::Error> {
+    let matches = Opts::command()
+        .after_help(get_help_text())
+        .after_long_help(get_help_text())
+        .get_matches();
+    let opts = Opts::from_arg_matches(&matches)?;
 
     let mut v: Vec<u8> = Vec::new();
     File::open(opts.file).unwrap()
@@ -29,6 +51,12 @@ fn main() {
     }
 
     let patch = Decoder::read(v.as_slice()).unwrap();
+    let patch = match patch {
+        DecoderResult::Patch(patch) => patch,
+        _ => {
+            panic!("File decoded successfully, but info dump not supported")
+        }
+    };
     if opts.dump_patch {
         PrettyPrinter::println(&patch).unwrap();
     }
@@ -82,5 +110,7 @@ fn main() {
         File::create(write_filename).unwrap()
             .write(&vec).unwrap();
     }
+
+    Ok(())
 }
 

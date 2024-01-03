@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::default;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, LowerHex};
 use file::model::{L6Patch, Model, ModelParam, Value as L6Value};
 use crate::model::{DataModel, Param, ParamType, Slot};
 
@@ -14,12 +14,14 @@ pub enum Value {
 
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Value::Bool(v) => v.fmt(f),
-            Value::Int(v) => v.fmt(f),
-            Value::Float(v) => v.fmt(f),
-            Value::String(v) => v.fmt(f)
-        }
+        let v: &dyn Display = match self {
+            Value::Bool(v) => v,
+            Value::Int(v) => v,
+            Value::Float(v) => v,
+            Value::String(v) => v,
+        };
+
+        Display::fmt(v, f)
     }
 }
 
@@ -162,8 +164,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
             errors.push(
                 format!("Slot {:#04x} model={:#08x} ordinal={} missing params: {}",
                         model.slot_id, model.model_id, model.ordinal,
-                        missing_params.iter().map(|id| format!("{:#x}", id))
-                            .collect::<Vec<_>>().join(", ")
+                        mk_hex_el_string(missing_params, ", ")
                 )
             )
         }
@@ -171,8 +172,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
             errors.push(
                 format!("Slot {:#04x} model={:#08x} ordinal={} params with invalid format: {}",
                         model.slot_id, model.model_id, model.ordinal,
-                        invalid_params.iter().map(|id| format!("{:#x}", id))
-                            .collect::<Vec<_>>().join(", ")
+                        mk_hex_el_string(invalid_params, ", ")
                 )
             )
         }
@@ -180,8 +180,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
             errors.push(
                 format!("Slot {:#04x} model={:#08x} ordinal={} unprocessed params: {}",
                         model.slot_id, model.model_id, model.ordinal,
-                        unprocessed_params.iter().map(|id| format!("{:#x}", id))
-                            .collect::<Vec<_>>().join(", ")
+                        mk_hex_el_string(unprocessed_params, ", ")
                 )
             )
         }
@@ -452,4 +451,9 @@ fn model_matches_slot(model: &Model, slot: &Slot) -> bool {
     let enable_matched = slot.fixed_enable.map_or(true, |v| model.enabled == v);
 
     slot_matched && model_matched && enable_matched
+}
+
+fn mk_hex_el_string<T: LowerHex>(vec: Vec<T>, separator: &str) -> String {
+    vec.iter().map(|v| format!("{:#x}", v))
+        .collect::<Vec<_>>().join(separator)
 }

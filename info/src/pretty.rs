@@ -19,7 +19,7 @@ impl PrettyPrinter {
         self.buffer += &"\n";
     }
 
-    pub(crate) fn println<T: Pretty>(obj: &T) -> fmt::Result {
+    pub(crate) fn println<T: Pretty + ?Sized>(obj: &T) -> fmt::Result {
         let mut pp = PrettyPrinter::new();
         Pretty::fmt(obj, &mut pp)?;
         println!("{}", pp.buffer);

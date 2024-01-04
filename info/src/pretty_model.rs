@@ -1,13 +1,58 @@
 use l6t::model;
+use l6t::model::{BundleType, PatchType};
 use crate::pretty::*;
 
 impl Pretty for model::L6Patch {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
-        writeln!(pp, "File type: L6T")?;
+        let file_type = match self.patch_type {
+            PatchType::Patch => "patch",
+            PatchType::AmpSetup => "amp setup",
+            PatchType::FxSetup => "fx setup"
+        };
+        writeln!(pp, "Patch type: {}", file_type)?;
         writeln!(pp)?;
         Pretty::fmt(&self.meta, pp)?;
         Pretty::fmt(&self.target_device, pp)?;
         Pretty::fmt(&self.models, pp)?;
+        Ok(())
+    }
+}
+
+impl Pretty for model::L6Bundle {
+    fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
+        let bundle_type = match self.bundle_type {
+            BundleType::Bundle => "bundle",
+            BundleType::Collection => "collection"
+        };
+        writeln!(pp, "Bundle type: {}", bundle_type)?;
+        writeln!(pp)?;
+        Pretty::fmt(&self.banks, pp)?;
+        Ok(())
+    }
+}
+
+impl Pretty for Vec<model::Bank> {
+    fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
+        writeln!(pp, "Banks:")?;
+        pp.indent += 1;
+
+        for v in self.iter() {
+            Pretty::fmt(v, pp)?;
+        }
+        pp.indent -= 1;
+        Ok(())
+    }
+}
+
+impl Pretty for model::Bank {
+    fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
+        writeln!(pp, "Bank '{}':", self.name)?;
+        pp.indent += 1;
+
+        for v in self.patches.iter() {
+            Pretty::fmt(v, pp)?;
+        }
+        pp.indent -= 1;
         Ok(())
     }
 }

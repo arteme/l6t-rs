@@ -18,7 +18,7 @@ use l6t::symbolic::data::{data_model_by_id, data_model_by_num, data_model_info_b
 use l6t::symbolic::model::DataModel;
 use l6t::symbolic::value::{group_values, read_values, ValueGroup, write_values};
 use crate::opts::Opts;
-use crate::pretty::PrettyPrinter;
+use crate::pretty::{Pretty, PrettyPrinter};
 
 pub struct DecodedPatch {
     patch: L6Patch,
@@ -111,25 +111,21 @@ fn main() -> Result<(), clap::error::Error> {
     File::open(opts.file).unwrap()
         .read_to_end(&mut v).unwrap();
 
-    let chunk = Chunk::from_data(v.as_slice(), None).unwrap();
     if opts.dump_iff {
+        let chunk = Chunk::from_data(v.as_slice(), None).unwrap();
         PrettyPrinter::println(&chunk).unwrap();
     }
 
-    let patch = Decoder::read(v.as_slice()).unwrap();
-    /*
-    let patch = match patch {
-        DecoderResult::Patch(patch) => patch,
-        _ => {
-            panic!("File decoded successfully, but info dump not supported")
-        }
-    };
+    let decoded = Decoder::read(v.as_slice()).unwrap();
     if opts.dump_patch {
-        PrettyPrinter::println(&patch).unwrap();
+        let patch: &dyn Pretty = match &decoded {
+            DecoderResult::Patch(v) => v,
+            DecoderResult::Bundle(v) => v,
+        };
+        PrettyPrinter::println(patch).unwrap();
     }
-    */
 
-    let bundle = decoder_result_to_bundle(patch, opts.model);
+    let bundle = decoder_result_to_bundle(decoded, opts.model);
     PrettyPrinter::println(&bundle).unwrap();
 
 /*

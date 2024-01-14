@@ -53,5 +53,13 @@ pub fn float(id: u32, name: &str) -> Param {
 pub fn ignore(id: u32) -> Param {
     Param::IgnoreParam {
         param_id: id,
+        param_type: ParamType::Int
+    }
+}
+
+pub fn ignore_f(id: u32) -> Param {
+    Param::IgnoreParam {
+        param_id: id,
+        param_type: ParamType::Float
     }
 }

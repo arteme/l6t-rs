@@ -46,6 +46,7 @@ pub enum Param {
     },
     IgnoreParam {
         param_id: u32,
+        param_type: ParamType,
     }
 }
 

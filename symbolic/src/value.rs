@@ -145,7 +145,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
                         _ => { continue; }
                     }
                 }
-                Param::IgnoreParam { param_id } => {
+                Param::IgnoreParam { param_id, .. } => {
                     processed_params.push(*param_id);
                     continue;
                 }
@@ -268,10 +268,14 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
         let mut params = vec![];
         for param in &slot.params {
             match param {
-                Param::IgnoreParam { param_id } => {
+                Param::IgnoreParam { param_id, param_type } => {
                     // put a "0" for ignored parameters
+                    let zero = match param_type {
+                        ParamType::Int | ParamType::Bool => L6Value::Int(0),
+                        ParamType::Float => L6Value::Float(0.0)
+                    };
                     params.push(
-                        ModelParam { param_id: *param_id, value: L6Value::Int(0) }
+                        ModelParam { param_id: *param_id, value: zero }
                     )
 
                 }

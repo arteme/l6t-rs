@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
-use file::model::L6Patch;
 
+use crate::data::pocketpod::*;
 use crate::data::pod2::*;
 use crate::data::podxt::*;
-use crate::model::{DataModel, Group, Param, Slot};
+use crate::model::{DataModel, Group, Param, ParamType, Slot};
 
 pub struct DataModelInfo {
     pub name: &'static str,
@@ -30,7 +30,11 @@ fn data_models() -> &'static HashMap<u32, DataModelInfo> {
             (0x03000a, DataModelInfo {
                 name: "PODxt Live data model",
                 model: podxt_live_data_model()
-            })
+            }),
+            (0x000600, DataModelInfo {
+                name: "Pocket POD model",
+                model: pocketpod_data_model(),
+            }),
         ])
     )
 }
@@ -131,8 +135,8 @@ pub fn filter_params_by_prefix(model: &DataModel,
             })
         }
 
-        Param::Param { name, param_id, .. } if should_remove(name) => {
-            Some(Param::IgnoreParam { param_id: *param_id })
+        Param::Param { name, param_id, param_type } if should_remove(name) => {
+            Some(Param::IgnoreParam { param_id: *param_id, param_type: param_type.clone() })
         }
         Param::FixedParam { name, .. } if should_remove(name)  => {
             panic!("Removing Param::FixedParam not supported!")

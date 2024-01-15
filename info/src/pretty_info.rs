@@ -37,6 +37,9 @@ impl Pretty for Vec<ValueGroup> {
 
 impl Pretty for DecodedPatch {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
+        Pretty::fmt_full(&self.patch, pp, false)?;
+        writeln!(pp)?;
+
         Pretty::fmt(&self.values, pp)?;
 
         if !self.errors.is_empty() {
@@ -52,18 +55,21 @@ impl Pretty for DecodedPatch {
 impl Pretty for DecodedBundle {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
         if self.banks.is_empty() { return Ok(()) }
-        if self.banks.len() == 1 && self.banks[0].patches.len() == 1 {
-            // a bundle with only one patch
+        if !self.is_bundle {
+            // only one patch
             Pretty::fmt(&self.banks[0].patches[0], pp)?;
+            return Ok(())
         }
 
         let sep = hsep();
-        for bank in &self.banks {
-            writeln!(pp, "Bank: {}\n{}\n", bank.name, sep)?;
+        for (n, bank) in self.banks.iter().enumerate() {
+            writeln!(pp, "[{}/{}] Bank: {}\n{}\n", n+1, self.banks.len(), bank.name, sep)?;
 
             for (n, patch) in bank.patches.iter().enumerate() {
                 if n > 0 { writeln!(pp)?; }
-                writeln!(pp, "[{}/{}]", n+1, bank.patches.len())?;
+                // This will prefix the L6Patch pretty output to form a seamless line:
+                // [xx/xx] Patch type: ...
+                write!(pp, "[{}/{}] ", n+1, bank.patches.len())?;
                 Pretty::fmt(patch, pp)?;
             }
         }

@@ -12,11 +12,10 @@ use clap::{CommandFactory, FromArgMatches};
 
 use l6t::iff::Chunk;
 use l6t::decoder::{Decoder, DecoderResult};
-use l6t::encoder::Encoder;
 use l6t::model::L6Patch;
 use l6t::symbolic::data::{data_model_by_id, data_model_by_num, data_model_info_by_id, data_model_keys};
 use l6t::symbolic::model::DataModel;
-use l6t::symbolic::value::{group_values, read_values, ValueGroup, write_values};
+use l6t::symbolic::value::{group_values, read_values, ValueGroup};
 use crate::opts::Opts;
 use crate::pretty::{Pretty, PrettyPrinter};
 
@@ -32,6 +31,7 @@ pub struct DecodedBank {
 }
 
 pub struct DecodedBundle {
+    is_bundle: bool,
     banks: Vec<DecodedBank>
 }
 
@@ -81,6 +81,7 @@ fn decoder_result_to_bundle(dr: DecoderResult, model_num: Option<usize>) -> Deco
             let p = patch_to_decoded(p);
             let bank = DecodedBank { name: "".into(), patches: vec![ p ] };
             DecodedBundle {
+                is_bundle: false,
                 banks: vec![ bank ]
             }
         }
@@ -93,7 +94,7 @@ fn decoder_result_to_bundle(dr: DecoderResult, model_num: Option<usize>) -> Deco
                     .collect();
                 banks.push(DecodedBank { name, patches });
             }
-            DecodedBundle { banks }
+            DecodedBundle { is_bundle: true, banks }
         }
     }
 

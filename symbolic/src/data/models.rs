@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use crate::data::pocketpod::*;
 use crate::data::pod2::*;
 use crate::data::podxt::*;
-use crate::model::{DataModel, Group, Param, ParamType, Slot};
+use crate::model::{DataModel, Group, Param, Slot};
 
 pub struct DataModelInfo {
     pub name: &'static str,

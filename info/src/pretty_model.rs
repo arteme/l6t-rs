@@ -13,7 +13,10 @@ impl Pretty for model::L6Patch {
         writeln!(pp)?;
         Pretty::fmt(&self.meta, pp)?;
         Pretty::fmt(&self.target_device, pp)?;
-        Pretty::fmt(&self.models, pp)?;
+
+        if pp.full {
+            Pretty::fmt(&self.models, pp)?;
+        }
         Ok(())
     }
 }

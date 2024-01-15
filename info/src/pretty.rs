@@ -4,12 +4,13 @@ pub use std::fmt::Write;
 pub struct PrettyPrinter {
     pub indent: usize,
     pub step: usize,
-    pub buffer: String
+    pub buffer: String,
+    pub full: bool
 }
 
 impl PrettyPrinter {
     fn new() -> Self {
-        PrettyPrinter { indent: 0, step: 2, buffer: "".into() }
+        PrettyPrinter { indent: 0, step: 2, buffer: "".into(), full: true }
     }
     fn indent(&mut self) {
         let indent = format!("{empty:width$}", empty="", width=(self.indent * self.step));
@@ -44,4 +45,13 @@ impl fmt::Write for PrettyPrinter {
 
 pub trait Pretty {
     fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result;
+
+    /** Same as `fmt`, but overrides `pp.full` for this call */
+    fn fmt_full(&self, pp: &mut PrettyPrinter, full: bool) -> fmt::Result {
+        let prev = pp.full;
+        pp.full = full;
+        let res = self.fmt(pp);
+        pp.full = prev;
+        res
+    }
 }

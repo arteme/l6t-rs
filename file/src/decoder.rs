@@ -43,19 +43,19 @@ impl<R: Read> Reader<R> {
         let mut arr = bytecast::u16_as_ne_mut_bytes(vec.as_mut_slice());
         self.reader.read_exact(&mut arr)?;
 
-        match self.little_endian {
-            true => {
-                for v in vec.as_mut_slice() {
-                    *v = u16::from_le(*v);
-                }
-            }
-            false => {
-                for v in vec.as_mut_slice() {
-                    *v = u16::from_be(*v);
-                }
+        let convert = match self.little_endian {
+            true => u16::from_le,
+            false => u16::from_be
+        };
+
+        let mut len = 0; // drop trailing NULs
+        for (n, v) in vec.iter_mut().enumerate() {
+            if *v != 0 {
+                *v = convert(*v);
+                len = n + 1;
             }
         }
-        Ok(String::from_utf16_lossy(&vec))
+        Ok(String::from_utf16_lossy(&vec[..len]))
     }
 
     pub fn read_utf_z(&mut self, len: usize) -> Result<String, io::Error> {
@@ -291,7 +291,7 @@ fn read_bank_info(chunk: &Chunk, little_endian: bool) -> Result<BankInfo, io::Er
 
     let mut r = reader_for_slice(data, little_endian);
     r.read_u32()?;
-    let name = r.read_utf(32)?;
+    let name = r.read_utf(64)?;
 
     Ok(BankInfo { name })
 }

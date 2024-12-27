@@ -112,7 +112,7 @@ pub fn read_values(patch: &L6Patch, model: &DataModel) -> (ValueMap, Vec<String>
         let mut processed_params = vec![];
         for param in &slot.params {
             let (name, value) = match param {
-                Param::SlotModel { name } => {
+                Param::SlotModel { name, .. } => {
                     (name, Value::Int(patch_model.model_id))
                 },
                 Param::SlotEnable { name } => {
@@ -229,7 +229,7 @@ pub fn write_values(values: ValueMap, model: &DataModel) -> L6Patch {
         let model = slot.fixed_model.or_else(|| {
            slot.params.iter().find_map(|p| {
                match p {
-                   Param::SlotModel { name } => {
+                   Param::SlotModel { name, .. } => {
                        let Some(v) = values.get(name) else {
                            return None;
                        };
@@ -391,59 +391,7 @@ fn value_to_l6(value: &Value, param_type: &ParamType, floats_as_ints: bool) -> L
     }
 }
 
-//
-
-pub struct ValueGroup {
-    pub name: String,
-    pub values: Vec<(String, Value)>
-}
-
-pub fn group_values(patch: &L6Patch, values: &ValueMap, model: &DataModel) -> Vec<ValueGroup> {
-    let mut groups: Vec<ValueGroup> = vec![];
-
-    for group in &model.groups {
-        let mut group_values = vec![];
-        let mut seen_names = vec![];
-
-        for slot in &group.slots {
-            let patch_model = patch.models.iter()
-                .find(|m| model_matches_slot(m, slot));
-            if patch_model.is_none() {
-                continue;
-            }
-
-            for param in &slot.params {
-                let name = match param {
-                    Param::SlotModel { name, .. } => name,
-                    Param::SlotEnable { name, .. } => name,
-                    Param::Param { name, .. } => name,
-                    Param::FixedParam { name, .. } => name,
-                    Param::IgnoreParam { .. } => { continue }
-                };
-                if seen_names.contains(name) { continue }
-                // We allow values to contain only a portion of props defined in
-                // the slot. "read_values" would have reported missing props errors,
-                // but the app may have chosen to ignore them.
-                if let Some(value) = values.get(name) {
-                    group_values.push((name.clone(), value.clone()));
-                }
-                seen_names.push(name.clone());
-            }
-        }
-
-        if !group_values.is_empty() {
-            let group = ValueGroup {
-                name: group.name.clone(),
-                values: group_values
-            };
-            groups.push(group)
-        }
-    }
-
-    groups
-}
-
-fn model_matches_slot(model: &Model, slot: &Slot) -> bool {
+pub(crate) fn model_matches_slot(model: &Model, slot: &Slot) -> bool {
     let mut possible_slot_ids = slot.params.iter().flat_map(|p| match p {
         Param::FixedParam { slot_id, .. } => slot_id.clone(),
         _ => None

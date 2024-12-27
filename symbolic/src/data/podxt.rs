@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::OnceLock;
 use crate::data::shorthand::*;
 use crate::data::models::filter_params_by_prefix;
@@ -262,9 +263,12 @@ fn podxt_data_model_all() -> &'static DataModel {
             },
         ];
 
+        let info_map = HashMap::new(); // TODO
+
         DataModel {
             floats_as_ints: false,
-            groups
+            groups,
+            info_map
         }
     })
 }

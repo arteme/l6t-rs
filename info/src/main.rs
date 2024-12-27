@@ -15,13 +15,15 @@ use l6t::decoder::{Decoder, DecoderResult};
 use l6t::model::L6Patch;
 use l6t::symbolic::data::{data_model_by_id, data_model_by_num, data_model_info_by_id, data_model_keys};
 use l6t::symbolic::model::DataModel;
-use l6t::symbolic::value::{group_values, read_values, ValueGroup};
+use l6t::symbolic::value::read_values;
+use l6t::symbolic::group::group_values;
+use l6t::symbolic::rich::{enrich_values, RichValueGroup};
 use crate::opts::Opts;
 use crate::pretty::{Pretty, PrettyPrinter};
 
 pub struct DecodedPatch {
     patch: L6Patch,
-    values: Vec<ValueGroup>,
+    values: Vec<RichValueGroup>,
     errors: Vec<String>
 }
 
@@ -70,6 +72,7 @@ fn decoder_result_to_bundle(dr: DecoderResult, model_num: Option<usize>) -> Deco
         let model = get_model(&patch, &model_num);
 
         let (values, errors) = read_values(&patch, model);
+        let values = enrich_values(values, &model.info_map);
         let values = group_values(&patch, &values, model);
 
         DecodedPatch { patch, values, errors }
@@ -107,6 +110,7 @@ fn main() -> Result<(), clap::error::Error> {
         .after_long_help(get_help_text())
         .get_matches();
     let opts = Opts::from_arg_matches(&matches)?;
+    let mut pp = PrettyPrinter::with_simple(opts.dump_simple);
 
     let mut v: Vec<u8> = Vec::new();
     File::open(opts.file).unwrap()
@@ -114,7 +118,7 @@ fn main() -> Result<(), clap::error::Error> {
 
     if opts.dump_iff {
         let chunk = Chunk::from_data(v.as_slice(), None).unwrap();
-        PrettyPrinter::println(&chunk).unwrap();
+        pp.println(&chunk).unwrap();
     }
 
     let decoded = Decoder::read(v.as_slice()).unwrap();
@@ -123,11 +127,11 @@ fn main() -> Result<(), clap::error::Error> {
             DecoderResult::Patch(v) => v,
             DecoderResult::Bundle(v) => v,
         };
-        PrettyPrinter::println(patch).unwrap();
+        pp.println(patch).unwrap();
     }
 
     let bundle = decoder_result_to_bundle(decoded, opts.model);
-    PrettyPrinter::println(&bundle).unwrap();
+    pp.println(&bundle).unwrap();
 
 /*
     if let Some(write_filename) = opts.write {

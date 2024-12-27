@@ -12,6 +12,10 @@ pub struct Opts {
     /// Dump L6T model loaded from the file
     pub dump_patch: bool,
 
+    #[clap(short = 's', long)]
+    /// Print simple (underlying) values together with the decoded rich values
+    pub dump_simple: bool,
+
     #[clap(short = 'e', long)]
     /// Re-encode the values before writing
     pub encode: bool,

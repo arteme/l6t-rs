@@ -1,5 +1,6 @@
 use std::sync::OnceLock;
-use l6t::symbolic::value::ValueGroup;
+use l6t::symbolic::group::ValueGroup;
+use l6t::symbolic::rich::RichValueGroup;
 use crate::{DecodedBundle, DecodedPatch};
 use crate::pretty::*;
 
@@ -17,6 +18,35 @@ pub fn hsep() -> &'static str {
     STR.get_or_init(
         || std::iter::repeat('=').take(65).collect::<String>()
     )
+}
+
+impl Pretty for Vec<RichValueGroup> {
+    fn fmt(&self, pp: &mut PrettyPrinter) -> fmt::Result {
+        let sep = sep();
+        for group in self {
+            writeln!(pp, "{}\n{}", group.name, sep)?;
+
+            for (name, value) in &group.values {
+                writeln!(pp, "{:30} : {}", name, value)?;
+                if pp.with_simple {
+                    let simple = value.get_simple();
+                    writeln!(pp, "{:30} : {:5} : {}", "", simple.get_type(), simple)?;
+                }
+/*
+                if value.is_simple() {
+                    writeln!(pp, "{:30} : {:5} : {}", name, value.get_simple_type(), value)?;
+                } else {
+                    writeln!(pp, "{:30} : {}", name, value)?;
+                    let simple = value.get_simple();
+                    writeln!(pp, "{:30} : {:5} : {}", "", simple.get_type(), simple)?;
+                }
+ */
+            }
+            writeln!(pp)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Pretty for Vec<ValueGroup> {

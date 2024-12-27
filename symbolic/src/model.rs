@@ -1,7 +1,9 @@
+use crate::rich::ValueInfoMap;
 
 pub struct DataModel {
     pub floats_as_ints: bool,
     pub groups: Vec<Group>,
+    pub info_map: ValueInfoMap
 }
 
 #[derive(Clone)]
@@ -28,7 +30,7 @@ pub enum ParamType {
 #[derive(Clone)]
 pub enum Param {
     SlotModel {
-        name: String,
+        name: String
     },
     SlotEnable {
         name: String,
@@ -36,7 +38,7 @@ pub enum Param {
     Param {
         name: String,
         param_id: u32,
-        param_type: ParamType
+        param_type: ParamType,
     },
     FixedParam {
         name: String,
@@ -50,3 +52,12 @@ pub enum Param {
     }
 }
 
+pub fn get_name(param: &Param) -> Option<&String> {
+    match param {
+        Param::SlotModel { name, .. } => Some(name),
+        Param::SlotEnable { name, .. } => Some(name),
+        Param::Param { name, .. } => Some(name),
+        Param::FixedParam { name, .. } => Some(name),
+        Param::IgnoreParam { .. } => None
+    }
+}

@@ -1,17 +1,24 @@
 pub use std::fmt;
 pub use std::fmt::Write;
+use clap::builder::Str;
 
 pub struct PrettyPrinter {
     pub indent: usize,
     pub step: usize,
     pub buffer: String,
-    pub full: bool
+    pub full: bool,
+    ///
+    pub with_simple: bool,
 }
 
 impl PrettyPrinter {
-    fn new() -> Self {
-        PrettyPrinter { indent: 0, step: 2, buffer: "".into(), full: true }
+    pub fn new() -> Self {
+        Self::with_simple(false)
     }
+    pub fn with_simple(with_simple: bool) -> Self {
+        PrettyPrinter { indent: 0, step: 2, buffer: "".into(), full: true, with_simple }
+    }
+
     fn indent(&mut self) {
         let indent = format!("{empty:width$}", empty="", width=(self.indent * self.step));
         self.buffer += indent.as_str()
@@ -20,11 +27,12 @@ impl PrettyPrinter {
         self.buffer += &"\n";
     }
 
-    pub(crate) fn println<T: Pretty + ?Sized>(obj: &T) -> fmt::Result {
-        let mut pp = PrettyPrinter::new();
-        Pretty::fmt(obj, &mut pp)?;
-        println!("{}", pp.buffer);
+    pub fn println<T: Pretty + ?Sized>(&mut self, obj: &T) -> fmt::Result {
+        Pretty::fmt(obj, self)?;
+        println!("{}", self.buffer);
+        self.buffer = String::new();
         Ok(())
+
     }
 }
 

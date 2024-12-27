@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::OnceLock;
 use crate::data::shorthand::*;
 use crate::model::{DataModel, Group, Slot};
@@ -269,12 +270,14 @@ pub fn pocketpod_data_model() -> &'static DataModel {
                     },
                 ]
             },
-
         ];
+
+        let info_map = HashMap::new(); // TODO
 
         DataModel {
             floats_as_ints: false,
-            groups
+            groups,
+            info_map
         }
     })
 }

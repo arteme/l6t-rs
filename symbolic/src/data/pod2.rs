@@ -1,16 +1,15 @@
 use std::collections::HashMap;
+use std::convert::identity;
 use std::string::String;
 use std::sync::OnceLock;
 use maplit::{convert_args, hashmap};
 use crate::data::shorthand::*;
 use crate::model::{DataModel, Group, Slot};
 
-fn id<T>(v: T) -> T { v }
-
 fn amp_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "Tube Preamp",
             2 => "POD Crunch",
             3 => "POD Drive",
@@ -49,7 +48,7 @@ fn amp_select() -> &'static HashMap<u32, String> {
 fn cab_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             16777231 => "No Cab",
             16777216 => "1x8 Tweed Champ",
             16777217 => "1x12 Tweed Deluxe",
@@ -70,10 +69,10 @@ fn cab_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn compression_ratio() -> &'static HashMap<u32, String> {
+pub(crate) fn compression_ratio() -> &'static HashMap<u32, String> {
     static MAP: OnceLock<HashMap<u32, String>> = OnceLock::new();
     MAP.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "off",
             1 => "1.4:1",
             2 => "2:1",
@@ -84,30 +83,30 @@ fn compression_ratio() -> &'static HashMap<u32, String> {
     })
 }
 
-fn rotary_speed() -> &'static HashMap<u32, String> {
+pub(crate) fn rotary_speed() -> &'static HashMap<u32, String> {
     static MAP: OnceLock<HashMap<u32, String>> = OnceLock::new();
     MAP.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "slow",
             1 => "fast",
         ))
     })
 }
 
-fn reverb_type() -> &'static HashMap<u32, String> {
+pub(crate) fn reverb_type() -> &'static HashMap<u32, String> {
     static MAP: OnceLock<HashMap<u32, String>> = OnceLock::new();
     MAP.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "spring",
             1 => "room",
         ))
     })
 }
 
-fn effect_select() -> &'static HashMap<u32, String> {
+pub(crate) fn effect_select() -> &'static HashMap<u32, String> {
     static MAP: OnceLock<HashMap<u32, String>> = OnceLock::new();
     MAP.get_or_init(|| {
-        convert_args!(keys=id::<u32>, values=String::from, hashmap!(
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "bypass",
             1 => "compressor",
             2 => "auto swell",

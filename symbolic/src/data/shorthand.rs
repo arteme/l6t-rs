@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::model::{Param, ParamType};
-use crate::rich::{FormattingType, Range, ValueInfo};
+use crate::rich::{Conversion, FormattingType, Range, ValueInfo};
 
 pub fn slot(name: &str) -> Param {
     Param::SlotModel {
@@ -98,14 +98,16 @@ pub fn db() -> ValueInfoBuilder {
 
 pub struct ValueInfoBuilder {
     formatting_type: FormattingType,
-    range: Option<Range>
+    range: Option<Range>,
+    conversion: Option<Conversion>
 }
 
 impl ValueInfoBuilder {
     pub fn new() -> ValueInfoBuilder {
         ValueInfoBuilder {
             formatting_type: FormattingType::Simple,
-            range: None
+            range: None,
+            conversion: None
         }
     }
 
@@ -129,14 +131,19 @@ impl ValueInfoBuilder {
     pub fn range(mut self, min: f32, max: f32) -> ValueInfoBuilder {
         self.min(min).max(max)
     }
+
+    pub fn convert(mut self, k: f32, b: f32) -> ValueInfoBuilder {
+        self.conversion = Some(Conversion { k, b });
+        self
+    }
 }
 
 impl Into<ValueInfo> for ValueInfoBuilder {
     fn into(self) -> ValueInfo {
         ValueInfo {
             formatting_type: self.formatting_type,
-            range: self.range
-
+            range: self.range,
+            conversion: self.conversion
         }
     }
 }

@@ -19,10 +19,18 @@ pub struct Range {
     pub max: f32
 }
 
+/// Represents a linear value conversion, f(x) = kx + b
+#[derive(Clone)]
+pub struct Conversion {
+    pub k: f32,
+    pub b: f32
+}
+
 #[derive(Clone)]
 pub struct  ValueInfo {
     pub formatting_type: FormattingType,
     pub range: Option<Range>,
+    pub conversion: Option<Conversion>,
 }
 
 pub type ValueInfoMap = HashMap<String, ValueInfo>;
@@ -31,7 +39,8 @@ pub type ValueInfoMap = HashMap<String, ValueInfo>;
 pub struct RichValue {
     value: Value,
     formatting_type: FormattingType,
-    range: Option<Range>
+    range: Option<Range>,
+    pub conversion: Option<Conversion>,
 }
 
 impl RichValue {
@@ -43,16 +52,25 @@ impl RichValue {
         self.value.get_type()
     }
 
+    fn convert_value(&self, value: f32) -> f32 {
+        match self.conversion {
+            None => { value }
+            Some(Conversion { k, b }) => {
+                k * value + b
+            }
+        }
+    }
+
     fn get_float(&self) -> Option<f32> {
         match self.value {
-            Value::Float(v) => Some(v),
+            Value::Float(v) => Some(self.convert_value(v)),
             _ => None
         }
     }
 
     fn get_int(&self) -> Option<u32> {
         match self.value {
-            Value::Int(v) => Some(v),
+            Value::Int(v) => Some(self.convert_value(v as f32) as u32),
             _ => None
         }
     }
@@ -106,14 +124,16 @@ pub fn enrich_values(map: ValueMap, rich_type_map: &ValueInfoMap) -> RichValueMa
                 RichValue {
                     value: v,
                     formatting_type: FormattingType::Simple,
-                    range: None
+                    range: None,
+                    conversion: None
                 }
             }
-            Some(ValueInfo { formatting_type, range }) => {
+            Some(ValueInfo { formatting_type, range, conversion }) => {
                 RichValue {
                     value: v,
                     formatting_type: formatting_type.clone(),
-                    range: range.clone()
+                    range: range.clone(),
+                    conversion: conversion.clone()
                 }
             }
         };

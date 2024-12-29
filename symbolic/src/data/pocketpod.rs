@@ -1,11 +1,84 @@
 use std::collections::HashMap;
+use std::convert::identity;
 use std::sync::OnceLock;
+use maplit::{convert_args, hashmap};
+use crate::data::pod2::{compression_ratio, effect_select, reverb_type, rotary_speed};
 use crate::data::shorthand::*;
 use crate::model::{DataModel, Group, Slot};
 
 /* NOTES: Vyzex does not save "wah enable" to a L6T,
    it is also a MIDI-only control.
 */
+
+// In the order of the Vyzex Pocket POD amp select, some names
+// different from POD 2.0
+fn amp_select() -> &'static HashMap<u32, String> {
+    static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
+    SELECT.get_or_init(|| {
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
+            0 => "Tube Preamp",
+            16 => "Jazz Clean",
+            5 => "Small Tweed",
+            21 => "Small Tweed 2",
+            6 => "Tweed Blues",
+            10 => "Brit Blues",
+            7 => "Black Panel",
+            22 => "Black Panel 2",
+            17 => "Boutique 1",
+            18 => "Boutique 2",
+            23 => "Boutique 3",
+            24 => "Cali Church 1",
+            25 => "Cali Church 2",
+            9 => "Brit Class A",
+            19 => "Brit Class A 2",
+            20 => "Brit Class A 3",
+            11 => "Brit Classic",
+            12 => "Brit Hi Gain",
+            8 => "Modern Class A",
+            13 => "Treadplate",
+            26 => "Treadplate 2",
+            14 => "Modern Hi Gain",
+            27 => "Modern Hi Gain 2",
+            15 => "Fuzz Box",
+            1 => "Line 6 Crunch",
+            28 => "Line 6 Twang",
+            30 => "Line 6 Blues",
+            2 => "Line 6 Crunch",
+            29 => "Line 6 Crunch 2",
+            3 => "Line 6 Drive",
+            4 => "Line 6 Layer",
+            31 => "Line 6 Insane",
+        ))
+    })
+}
+
+// Supposedly, these ids are unique, but Pocket POD uses the same
+// ids as POD 2.0 with completely different cabs
+fn cab_select() -> &'static HashMap<u32, String> {
+    static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
+    SELECT.get_or_init(|| {
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
+            16777216 => "1x8 Small Tweed #2",
+            16777217 => "1x12 Small Tweed",
+            16777218 => "1x12 Brit Class A #3",
+            16777219 => "1x12 Black Panel",
+            16777220 => "1x12 '98 Line 6 Flextone",
+            16777221 => "2x12 Black Panel #2",
+            16777222 => "2x12 Brit Class A",
+            16777223 => "2x12 Modern Class A",
+            16777224 => "2x12 '98 Line 6 Custom 2x12",
+            16777225 => "4x10 Tweed Blues",
+            16777226 => "4x10 '98 Line 6 Custom 4x10",
+            16777227 => "4x12 Brit High Gain",
+            16777228 => "4x12 Brit High Gain #2",
+            16777229 => "4x12 Brit High Gain #3",
+            16777230 => "4x12 Line 6",
+            16777231 => "No Cab",
+        ))
+    })
+}
+
+
 
 pub fn pocketpod_data_model() -> &'static DataModel {
     static MODEL: OnceLock<DataModel> = OnceLock::new();
@@ -272,7 +345,50 @@ pub fn pocketpod_data_model() -> &'static DataModel {
             },
         ];
 
-        let info_map = HashMap::new(); // TODO
+        let info_map = convert_args!(hashmap!(
+            "amp_select" => lookup(amp_select()),
+            "drive" => percent(),
+            "bass" => percent(),
+            "mid" => percent(),
+            "treble" => percent(),
+            "presence" => percent(),
+            "chan_volume" => percent(),
+            "drive2" => percent(),
+            "cab_select" => lookup(cab_select()),
+            "air" => percent(),
+            "gate_threshold" => db().convert(-1.0, -96.0).range(-96.0, 0.0),
+            "gate_decay" => percent(),
+            "delay_time" => millis().range(0.0, 3150.0),
+            "delay_feedback" => percent(),
+            "delay_level" => percent(),
+            "effect_select" => lookup(effect_select()),
+            "compression_ratio" => lookup(compression_ratio()),
+            "volume_swell_time" => percent(),
+             "chorus_speed" => hz().range(0.16, 5.0),
+            "chorus_depth" => percent(),
+            "chorus_feedback" => percent().range(-1.0, 1.0),
+            "chorus_pre_delay" => percent().convert(1.0/25.0, 0.0),
+            "flanger_speed" => hz().range(0.16, 5.0),
+            "flanger_depth" => percent(),
+            "flanger_feedback" => percent().range(-1.0, 1.0),
+            "flanger_pre_delay" => percent().convert(1.0/25.0, 0.0),
+            "trem_speed" => hz().range(0.33, 6.67),
+            "trem_depth" => percent(),
+            "rotary_speed" => lookup(rotary_speed()),
+            "rotary_fast_speed" => hz().range(0.36, 10.0),
+            "rotary_slow_speed" => hz().range(0.36, 10.0),
+            "rotary_depth" => percent(), //???
+            "vol_min" => percent(),
+            "wah_position" => percent(),
+            "wah_bottom_freq" => percent(),
+            "wah_top_freq" => percent(),
+            "reverb_type" => lookup(reverb_type()),
+            "reverb_decay" => percent(),
+            "reverb_density" => percent(),
+            "reverb_diffusion" => percent(),
+            "reverb_tone" => percent(),
+            "reverb_level" => percent(),
+        ));
 
         DataModel {
             floats_as_ints: false,

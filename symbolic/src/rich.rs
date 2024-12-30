@@ -6,7 +6,8 @@ use crate::value::{Value, ValueMap, ValueType};
 #[derive(Clone)]
 pub enum FormattingType {
     Simple,
-    StringLookup(&'static HashMap<u32, String>),
+    IntLookup(&'static HashMap<u32, String>),
+    FloatLookup(&'static Vec<(u32, String)>),
     Percent,
     Millis,
     Millis1,
@@ -112,11 +113,22 @@ impl Display for RichValue {
                 let Some(v) = self.get_float() else { return incorrect("decibel") };
                 write!(f, "{:.0} dB", v)
             }
-            FormattingType::StringLookup(map) => {
-                let Some(v) = self.get_int() else { return incorrect("string lookup") };
+            FormattingType::IntLookup(map) => {
+                let Some(v) = self.get_int() else { return incorrect("int lookup") };
                 let def = "???".to_string();
                 let v = map.get(&v).unwrap_or(&def);
                 write!(f, "{}", v)
+            }
+            FormattingType::FloatLookup(map) => {
+                let Some(v) = self.get_float() else { return incorrect("float lookup") };
+                let v = v as u32;
+                let def = "???".to_string();
+                let mut r = &def;
+                for (k,n) in map.iter() {
+                    if *k > v { break }
+                    r = n;
+                }
+                write!(f, "{}", r)
             }
         }
     }

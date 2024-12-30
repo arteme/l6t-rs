@@ -70,7 +70,12 @@ pub fn ignore_f(id: u32) -> Param {
 
 pub fn lookup(map: &'static HashMap<u32, String>) -> ValueInfoBuilder {
     ValueInfoBuilder::new()
-        .formatting_type(FormattingType::StringLookup(map))
+        .formatting_type(FormattingType::IntLookup(map))
+}
+
+pub fn lookup_f(map: &'static Vec<(u32, String)>) -> ValueInfoBuilder {
+    ValueInfoBuilder::new()
+        .formatting_type(FormattingType::FloatLookup(map))
 }
 
 pub fn percent() -> ValueInfoBuilder {

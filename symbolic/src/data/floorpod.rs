@@ -127,12 +127,57 @@ fn effect_select() -> &'static HashMap<u32, String> {
     })
 }
 
+fn delay_shift() -> &'static Vec<(u32, String)> {
+    static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        vec![
+            (0, "off"),
+            (4, "-12 semitones"),
+            (8, "-11 semitones"),
+            (12, "-10 semitones"),
+            (16, "-9 semitones"),
+            (20, "-8 semitones"),
+            (24, "-7 semitones"),
+            (28, "-6 semitones"),
+            (32, "-5 semitones"),
+            (36, "-4 semitones"),
+            (42, "-3 semitones"),
+            (48, "-2 semitones"),
+            (54, "-1 semitones"),
+            (60, "unison (-5)"),
+            (61, "unison (-4)"),
+            (62, "unison (-3)"),
+            (63, "unison (-2)"),
+            (64, "unison (-1)"),
+            (65, "unison"),
+            (66, "unison (+1)"),
+            (67, "unison (+2)"),
+            (68, "unison (+3)"),
+            (69, "unison (+4)"),
+            (70, "unison (+5)"),
+            (71, "unison (+6)"),
+            (72, "+1 semitones"),
+            (78, "+2 semitones"),
+            (84, "+3 semitones"),
+            (90, "+4 semitones"),
+            (96, "+5 semitones"),
+            (100, "+6 semitones"),
+            (104, "+7 semitones"),
+            (108, "+8 semitones"),
+            (112, "+9 semitones"),
+            (116, "+10 semitones"),
+            (120, "+11 semitones"),
+            (124, "+12 semitones"),
+        ]
+        .into_iter().map(|(k,v)| (k, v.to_string())).collect()
+    })
+}
 
 pub fn floorpod_data_model() -> &'static DataModel {
     static MODEL: OnceLock<DataModel> = OnceLock::new();
     MODEL.get_or_init(|| {
         let groups = vec![
-            Group { // good
+            Group {
                 name: "Amp".into(),
                 slots: vec![
                     Slot {
@@ -157,7 +202,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                     },
                 ]
             },
-            Group { // TODO: cab_select
+            Group {
                 name: "Cab".into(),
                 slots: vec![
                     Slot {
@@ -178,7 +223,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                     },
                 ]
             },
-            Group { // good
+            Group {
                 name: "Compressor".into(),
                 slots: vec![
                     Slot {
@@ -200,7 +245,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                     },
                 ]
             },
-            Group { // good
+            Group {
                 name: "Noise gate".into(),
                 slots: vec![
                     Slot {
@@ -215,7 +260,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                     },
                 ]
             },
-            Group { // TODO
+            Group {
                 name: "Delay".into(),
                 slots: vec![
                     // TODO: These slots are so very similar expect
@@ -254,7 +299,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                         params: vec![
                             slot_enable("delay_enable"),
                             fixed_int("delay_type", 2),
-                            float(0x100002, "delay_shift"), // TODO
+                            float(0x100002, "delay_shift"),
                             float(0x100000, "delay_time"), // 0 .. 3150.5 = 0 .. 3145.5 ms
                             float(0x100001, "delay_feedback"), // %
                             float(0x010001, "delay_level"), // %
@@ -401,7 +446,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
                             float(0x100000, "flanger_speed"), // 0.15 .. 10.0 Hz
                             float(0x100001, "flanger_depth"), // %
                             float(0x100002, "flanger_feedback"), // -1 .. 1.015 = -100 .. 0 %
-                            float(0x100003, "flanger_pre_delay"), // 0 .. 25, unit?, shown in %
+                            float(0x100003, "flanger_pre_delay"), // 0 .. 25 = 0 .. 100 %
                         ]
                     },
                     Slot {
@@ -569,6 +614,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
             "gate_threshold" => db().range(-96.0, 0.0),
             "gate_decay" => percent(),
             "delay_type" => lookup(delay_type()),
+            "delay_shift" => lookup_f(delay_shift()).convert(127.5, 0.0, 0.0),
             "delay_depth" => percent(),
             "delay_speed" => percent(),
             "delay_time" => millis1().convert(3145.5/3150.5, 0.0, 0.0).range(0.0, 3145.5),
@@ -591,6 +637,7 @@ pub fn floorpod_data_model() -> &'static DataModel {
             "flanger_speed" => hz().range(0.15, 10.0),
             "flanger_depth" => percent(),
             "flanger_feedback" => percent().convert(1.0/2.02, -1.01, -0.0).range(0.0, 1.0),
+            "flanger_pre_delay" => percent().convert(1.0/25.0, 0.0, 0.0),
             "phaser_speed" => percent(),
             "phaser_depth" => percent(),
             "u_vibe_speed" => percent(),

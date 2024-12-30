@@ -11,6 +11,7 @@ fn amp_select() -> &'static HashMap<u32, String> {
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             0 => "Tube Preamp",
+            1 => "POD Clean",
             2 => "POD Crunch",
             3 => "POD Drive",
             4 => "POD Layer",

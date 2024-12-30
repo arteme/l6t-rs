@@ -9,10 +9,10 @@ pub enum FormattingType {
     IntLookup(&'static HashMap<u32, String>),
     FloatLookup(&'static Vec<(u32, String)>),
     Percent,
-    Millis,
-    Millis1,
+    Millis(usize),
     Hertz,
-    Decibel,
+    Decibel(usize),
+    BPM,
 }
 
 #[derive(Clone)]
@@ -21,12 +21,11 @@ pub struct Range {
     pub max: f32
 }
 
-/// Represents a linear value conversion, f(x) = k(a + x) + b
 #[derive(Clone)]
-pub struct Conversion {
-    pub k: f32,
-    pub a: f32,
-    pub b: f32
+pub enum  Conversion {
+    /// Represents a linear value conversion, f(x) = k(a + x) + b
+    Linear { k: f32, a: f32, b: f32 },
+    Interpolate { points: Vec<(f32, f32)> }
 }
 
 #[derive(Clone)]
@@ -57,10 +56,25 @@ impl RichValue {
 
     // Conversion done in f64 because we also put u32 through the same conversion
     fn convert_value(&self, value: f64) -> f64 {
-        match self.conversion {
+        match &self.conversion {
             None => { value }
-            Some(Conversion { k, a, b }) => {
-                (k as f64) * ((a as f64) + value) + (b as f64)
+            Some(Conversion::Linear { k, a, b }) => {
+                (*k as f64) * ((*a as f64) + value) + (*b as f64)
+            }
+            Some(Conversion::Interpolate { points }) => {
+                let mut val = 0.0;
+                for w in points.windows(2) {
+                    let (x1, y1) = w[0];
+                    let (x2, y2) = w[1];
+                    let x1 = x1 as f64;
+                    let x2 = x2 as f64;
+                    let y1 = y1 as f64;
+                    let y2 = y2 as f64;
+                    if value > x2 { continue }
+                    val = y1 + (value - x1) * (y2 - y1) / (x2 - x1);
+                    break;
+                }
+                val
             }
         }
     }
@@ -88,7 +102,6 @@ impl Display for RichValue {
             write!(f, "{} (incorrect type '{}' for {})", &self.value, &self.value.get_type(), type_)
         };
 
-
         match self.formatting_type {
             FormattingType::Simple => {
                 write!(f, "{}", &self.value)
@@ -97,21 +110,21 @@ impl Display for RichValue {
                 let Some(v) = self.get_float() else { return incorrect("percent") };
                 write!(f, "{:.0} %", v * 100.0)
             }
-            FormattingType::Millis => {
+            FormattingType::Millis(decimals) => {
                 let Some(v) = self.get_float() else { return incorrect("millis") };
-                write!(f, "{:.0} ms", v)
-            }
-            FormattingType::Millis1 => {
-                let Some(v) = self.get_float() else { return incorrect("millis") };
-                write!(f, "{:.1} ms", v)
+                write!(f, "{:.decimals$} ms", v, decimals=decimals)
             }
             FormattingType::Hertz => {
                 let Some(v) = self.get_float() else { return incorrect("hertz") };
                 write!(f, "{:.2} Hz", v)
             }
-            FormattingType::Decibel => {
+            FormattingType::Decibel(decimals) => {
                 let Some(v) = self.get_float() else { return incorrect("decibel") };
-                write!(f, "{:.0} dB", v)
+                write!(f, "{:.decimals$} dB", v, decimals=decimals)
+            }
+            FormattingType::BPM => {
+                let Some(v) = self.get_float() else { return incorrect("bpm") };
+                write!(f, "{:.1} BPM", v)
             }
             FormattingType::IntLookup(map) => {
                 let Some(v) = self.get_int() else { return incorrect("int lookup") };

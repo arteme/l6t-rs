@@ -85,6 +85,12 @@ pub fn millis() -> ValueInfoBuilder {
         .range(0.0, f32::INFINITY)
 }
 
+pub fn millis1() -> ValueInfoBuilder {
+    ValueInfoBuilder::new()
+        .formatting_type(FormattingType::Millis1)
+        .range(0.0, f32::INFINITY)
+}
+
 pub fn hz() -> ValueInfoBuilder {
     ValueInfoBuilder::new()
         .formatting_type(FormattingType::Hertz)
@@ -132,8 +138,8 @@ impl ValueInfoBuilder {
         self.min(min).max(max)
     }
 
-    pub fn convert(mut self, k: f32, b: f32) -> ValueInfoBuilder {
-        self.conversion = Some(Conversion { k, b });
+    pub fn convert(mut self, k: f32, a: f32, b: f32) -> ValueInfoBuilder {
+        self.conversion = Some(Conversion { k, a, b });
         self
     }
 }

@@ -243,7 +243,7 @@ pub fn pocketpod_data_model() -> &'static DataModel {
                             float(0x100000, "chorus_speed"), // 0.16 .. 5 Hz
                             float(0x100001, "chorus_depth"), // %
                             float(0x100002, "chorus_feedback"), // -1 .. 1 %
-                            float(0x100003, "chorus_pre_delay"), // 0 .. 25, unit?, shown in %
+                            float(0x100003, "chorus_pre_delay"), // 0 .. 25 = 0 .. 100%
                         ]
                     },
                     Slot {
@@ -256,7 +256,7 @@ pub fn pocketpod_data_model() -> &'static DataModel {
                             float(0x100000, "chorus_speed"), // 0.16 .. 5 Hz
                             float(0x100001, "chorus_depth"), // %
                             float(0x100002, "chorus_feedback"), // -1 .. 1 %
-                            float(0x100003, "chorus_pre_delay"), // 0 .. 25, unit?, shown in %
+                            float(0x100003, "chorus_pre_delay"), // 0 .. 25 = 0 .. 100%
                         ]
                     },
                     Slot {
@@ -269,7 +269,7 @@ pub fn pocketpod_data_model() -> &'static DataModel {
                             float(0x100000, "flanger_speed"), // 0.16 .. 5 Hz
                             float(0x100001, "flanger_depth"), // %
                             float(0x100002, "flanger_feedback"), // -1 .. 1 %
-                            float(0x100003, "flanger_pre_delay"), // 0 .. 25, unit?, shown in %
+                            float(0x100003, "flanger_pre_delay"), // 0 .. 25 = 0 .. 100%
                         ]
                     },
                     Slot {
@@ -282,7 +282,7 @@ pub fn pocketpod_data_model() -> &'static DataModel {
                             float(0x100000, "flanger_speed"), // 0.16 .. 5 Hz
                             float(0x100001, "flanger_depth"), // %
                             float(0x100002, "flanger_feedback"), // -1 .. 1 %
-                            float(0x100003, "flanger_pre_delay"), // 0 .. 25, unit?, shown in %
+                            float(0x100003, "flanger_pre_delay"), // 0 .. 25 = 0 .. 100%
                         ]
                     },
                     Slot {
@@ -356,7 +356,7 @@ pub fn pocketpod_data_model() -> &'static DataModel {
             "drive2" => percent(),
             "cab_select" => lookup(cab_select()),
             "air" => percent(),
-            "gate_threshold" => db().convert(-1.0, -96.0).range(-96.0, 0.0),
+            "gate_threshold" => db().convert(-1.0, 0.0, -96.0).range(-96.0, 0.0),
             "gate_decay" => percent(),
             "delay_time" => millis().range(0.0, 3150.0),
             "delay_feedback" => percent(),
@@ -367,11 +367,11 @@ pub fn pocketpod_data_model() -> &'static DataModel {
              "chorus_speed" => hz().range(0.16, 5.0),
             "chorus_depth" => percent(),
             "chorus_feedback" => percent().range(-1.0, 1.0),
-            "chorus_pre_delay" => percent().convert(1.0/25.0, 0.0),
+            "chorus_pre_delay" => percent().convert(1.0/25.0, 0.0, 0.0),
             "flanger_speed" => hz().range(0.16, 5.0),
             "flanger_depth" => percent(),
             "flanger_feedback" => percent().range(-1.0, 1.0),
-            "flanger_pre_delay" => percent().convert(1.0/25.0, 0.0),
+            "flanger_pre_delay" => percent().convert(1.0/25.0, 0.0, 0.0),
             "trem_speed" => hz().range(0.33, 6.67),
             "trem_depth" => percent(),
             "rotary_speed" => lookup(rotary_speed()),

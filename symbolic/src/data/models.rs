@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use crate::data::floorpod::*;
 use crate::data::pocketpod::*;
 use crate::data::pod2::*;
 use crate::data::podxt::*;
@@ -36,6 +37,10 @@ fn data_models() -> &'static HashMap<u32, DataModelInfo> {
             (0x03000a, DataModelInfo {
                 name: "PODxt Live data model",
                 model: podxt_live_data_model()
+            }),
+            (0x000500, DataModelInfo {
+                name: "Floor POD Plus model",
+                model: floorpod_data_model(),
             }),
             (0x000600, DataModelInfo {
                 name: "Pocket POD model",

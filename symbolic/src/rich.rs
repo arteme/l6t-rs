@@ -9,6 +9,7 @@ pub enum FormattingType {
     StringLookup(&'static HashMap<u32, String>),
     Percent,
     Millis,
+    Millis1,
     Hertz,
     Decibel,
 }
@@ -19,10 +20,11 @@ pub struct Range {
     pub max: f32
 }
 
-/// Represents a linear value conversion, f(x) = kx + b
+/// Represents a linear value conversion, f(x) = k(a + x) + b
 #[derive(Clone)]
 pub struct Conversion {
     pub k: f32,
+    pub a: f32,
     pub b: f32
 }
 
@@ -52,25 +54,28 @@ impl RichValue {
         self.value.get_type()
     }
 
-    fn convert_value(&self, value: f32) -> f32 {
+    // Conversion done in f64 because we also put u32 through the same conversion
+    fn convert_value(&self, value: f64) -> f64 {
         match self.conversion {
             None => { value }
-            Some(Conversion { k, b }) => {
-                k * value + b
+            Some(Conversion { k, a, b }) => {
+                (k as f64) * ((a as f64) + value) + (b as f64)
             }
         }
     }
 
     fn get_float(&self) -> Option<f32> {
         match self.value {
-            Value::Float(v) => Some(self.convert_value(v)),
+            Value::Float(v) => Some(self.convert_value(v as f64) as f32),
             _ => None
         }
     }
 
     fn get_int(&self) -> Option<u32> {
         match self.value {
-            Value::Int(v) => Some(self.convert_value(v as f32) as u32),
+            Value::Int(v) => {
+                Some(self.convert_value(v as f64) as u32)
+            },
             _ => None
         }
     }
@@ -94,6 +99,10 @@ impl Display for RichValue {
             FormattingType::Millis => {
                 let Some(v) = self.get_float() else { return incorrect("millis") };
                 write!(f, "{:.0} ms", v)
+            }
+            FormattingType::Millis1 => {
+                let Some(v) = self.get_float() else { return incorrect("millis") };
+                write!(f, "{:.1} ms", v)
             }
             FormattingType::Hertz => {
                 let Some(v) = self.get_float() else { return incorrect("hertz") };

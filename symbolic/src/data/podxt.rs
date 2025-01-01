@@ -430,6 +430,16 @@ fn pedal_assign_select() -> &'static HashMap<u32, String> {
     })
 }
 
+fn footswitch_mode_select() -> &'static HashMap<u32, String> {
+    static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
+    SELECT.get_or_init(|| {
+        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
+            0 => "amp",
+            1 => "comp",
+        ))
+    })
+}
+
 fn heads_value() -> &'static Vec<(u32, String)> {
     static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
     MAP.get_or_init(|| {
@@ -596,6 +606,7 @@ fn podxt_data_model_all() -> &'static DataModel {
                             int(0x20000f, "live.variax_bass.blend"),
                             int(0x200010, "live.variax_bass.bass"),
                             int(0x200011, "live.variax_bass.treble"),
+                            int(0x200018, "live.footswitch_mode"),
                         ]
                     },
                 ]
@@ -1221,6 +1232,8 @@ fn podxt_data_model_all() -> &'static DataModel {
             "di_model" => percent(),
             "di_delay" => millis1().from_to(0.0, 0.0, 1.0, 12.7),
             "di_xover" => hz().points_l6e(&[(0, 0.0), (128, 800.0)]),
+
+            "live.footswitch_mode" => lookup(footswitch_mode_select()),
         ));
 
         DataModel {

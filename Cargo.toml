@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["lib", "file", "symbolic", "info"]
+members = ["lib", "file", "symbolic", "info", "viewer"]
+default-members = ["lib", "file", "symbolic", "info"]
 
 [workspace.package]
 version = "0.2.0"

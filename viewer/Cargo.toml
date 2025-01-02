@@ -1,0 +1,22 @@
+[package]
+name = "l6t-viewer"
+version = "0.0.0"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+
+anyhow = "1.0.95"
+gtk4 = { version = "0.9.5", features = ["v4_16"] }
+tokio = { version = "1.42.0", features = ["macros", "rt-multi-thread"] }
+l6t = { version = "*", path = "../lib" }
+log = { version = "0.4.22", features = [] }
+
+[build-dependencies]
+
+anyhow = "1.0.95"
+glib-build-tools = "0.20.0"

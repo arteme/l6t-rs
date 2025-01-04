@@ -2,12 +2,20 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use crate::group::ValueGroup;
 use crate::value::{Value, ValueMap, ValueType};
+#[cfg(feature = "serde")]
+use serde_map_to_array::HashMapToArray;
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum FormattingType {
     Simple,
-    IntLookup(&'static HashMap<u32, String>),
-    FloatLookup(&'static Vec<(u32, String)>),
+    IntLookup(
+        #[cfg_attr(feature = "serde", serde(with = "HashMapToArray::<u32, String>"))]
+        &'static HashMap<u32, String>
+    ),
+    FloatLookup(
+        &'static Vec<(u32, String)>
+    ),
     Percent,
     Millis(usize),
     Hertz,
@@ -16,12 +24,14 @@ pub enum FormattingType {
 }
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct Range {
     pub min: f32,
     pub max: f32
 }
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum  Conversion {
     /// Represents a linear value conversion, f(x) = k(a + x) + b
     Linear { k: f32, a: f32, b: f32 },
@@ -29,6 +39,7 @@ pub enum  Conversion {
 }
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct  ValueInfo {
     pub formatting_type: FormattingType,
     pub range: Option<Range>,
@@ -38,6 +49,7 @@ pub struct  ValueInfo {
 pub type ValueInfoMap = HashMap<String, ValueInfo>;
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct RichValue {
     value: Value,
     formatting_type: FormattingType,

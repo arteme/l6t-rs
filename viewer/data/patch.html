@@ -1,0 +1,54 @@
+<html>
+<head>
+  <style>
+    {% include 'patch.css' %}
+  </style>
+</head>
+<body>
+{% macro name_value(name, value) -%}
+{% if value %}<div class="name">{{ name }}</div><div class="value">{{ value }}</div>{% endif %}
+{%- endmacro %}
+
+  <div class="values">
+    <div class="name">Device</div>
+    <div class="value">{{ patch.target_device.midi_id|hex }}</div>
+    <div class="name">Name</div>
+    <div class="value">{{ patch.target_device.name }}</div>
+    <div></div><div></div>
+    {{ name_value("author", patch.meta.author) }}
+    {{ name_value("guitarist", patch.meta.guitarist) }}
+    {{ name_value("band", patch.meta.band) }}
+    {{ name_value("song", patch.meta.song) }}
+    {{ name_value("style", patch.meta.style) }}
+    {{ name_value("pickup", patch.meta.pickup_position ~ ' - ' ~ patch.meta.pickup_style) }}
+    {{ name_value("amp", patch.meta.amp_name) }}
+    {{ name_value("app", patch.meta.creator_app ~ ' ' ~ patch.meta.creator_app_version) }}
+    {{ name_value("comments", patch.meta.comments) }}
+  </div>
+
+  {% for group in groups %}
+    <h1>{{ group.name }}</h1>
+    <div class="values">
+    {% for (name, value) in group.values %}
+      <div class="name">{{ name }}</div>
+      <div class="value" data-x="">{{ values[name] }}</div>
+      <div class="show-raw"></div>
+      <div class="show-raw"><pre>{{ raw[name] }}</pre></div>
+    {% endfor %}
+    </div>
+  {% endfor %}
+  {% if errors %}
+  <section class="errors">
+    <h1>Errors</h1>
+    <ul>
+      {% for error in errors %}
+        <li class="error">{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  <pre>
+      {{- debug(patch) }}
+  </pre>
+</body>
+</html>

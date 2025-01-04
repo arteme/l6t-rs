@@ -6,6 +6,8 @@ use log::warn;
 use l6t::decoder::{Decoder, DecoderResult};
 use l6t::model::L6Patch;
 use l6t::symbolic::data::data_model_by_id;
+use l6t::symbolic::group::group_values;
+use l6t::symbolic::rich::enrich_values;
 use l6t::symbolic::value::{read_values, ValueMap};
 use crate::file::{Bank, Bundle, File, Patch};
 
@@ -15,12 +17,14 @@ pub fn load_file(file: gio::File) -> Result<File> {
 
     let process_patch = |patch: L6Patch| {
         let Some(model) = data_model_by_id(patch.target_device.midi_id) else {
-            warn!("Model not found: {:04x?}", patch.target_device.midi_id);
-            return Patch { patch, values: ValueMap::new() }
+            let error = format!("Model not found: {:04x?}", patch.target_device.midi_id);
+            return Patch { patch, values: Default::default(), errors: vec![error] }
         };
         let (values, errors) = read_values(&patch, &model);
+        let values = enrich_values(values, &model.info_map);
+        let values = group_values(&patch, &values, model);
 
-        Patch { patch, values }
+        Patch { patch, values, errors }
     };
 
     let contents = match Decoder::read(&data)? {

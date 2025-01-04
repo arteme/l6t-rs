@@ -12,28 +12,43 @@ glib::wrapper! {
 
 mod imp {
     use super::*;
-    use std::cell::RefCell;
+    use std::cell::{OnceCell, RefCell};
     use gio::ActionEntry;
     use gtk4::{CompositeTemplate, FileFilter};
     use gtk4::prelude::TreeViewExt;
+    use webkit6::gtk;
+    use webkit6::prelude::WebViewExt;
     use crate::file::{File, Selection};
+    use crate::html::{generate_empty, generate_html};
     use crate::loading::load_file;
 
     #[derive(Default, CompositeTemplate)]
     #[template(resource = "/io/github/arteme/l6t-rs/viewer/ui/appwindow.ui")]
     pub struct AppWindow {
         file_contents: RefCell<Option<File>>,
+        webview: OnceCell<webkit6::WebView>,
+        subtitle_label: OnceCell<gtk4::Label>,
 
+        #[template_child]
+        header_bar: TemplateChild<gtk4::HeaderBar>,
         #[template_child]
         open_file_button: TemplateChild<gtk4::Button>,
         #[template_child]
         tree_view: TemplateChild<gtk4::TreeView>,
+        #[template_child]
+        webview_parent: TemplateChild<gtk4::ScrolledWindow>,
     }
 
     impl AppWindow {
         fn init(&self) {
             self.init_actions();
             self.init_tree_view();
+
+            let webview = webkit6::WebView::builder().build();
+            self.webview_parent.get().set_child(Some(&webview));
+            self.webview.set(webview).ok();
+
+            self.webview.get().unwrap().load_html(&generate_empty(), None);
         }
 
         fn init_actions(&self) {
@@ -43,8 +58,14 @@ mod imp {
                 self,
                 move |_, _, _| {
                     glib::spawn_future_local(async move {
-                            let f = w.open_file_dialog().await;
-                            w.loaded(f.expect("something"));
+                        match w.open_file_dialog().await {
+                                Ok((f,n)) => {
+                                    w.loaded(f, n);
+                                }
+                                Err(e) => {
+                                    error!("File loading failed: {e}");
+                                }
+                        }
                     });
                 }
             ))
@@ -81,6 +102,33 @@ mod imp {
             ));
         }
 
+        fn set_subtitle(&self, subtitle: &str) {
+            let subtitle_label = self.subtitle_label.get_or_init(|| {
+                let title_box = gtk4::Box::builder()
+                    .orientation(gtk4::Orientation::Vertical)
+                    .build();
+                let title_label = gtk::Label::builder()
+                    .css_classes(["title"])
+                    .build();
+                let subtitle_label = gtk::Label::builder()
+                    .css_classes(["subtitle"])
+                    .build();
+                title_box.append(&title_label);
+                title_box.append(&subtitle_label);
+                self.header_bar.set_title_widget(Some(&title_box));
+
+                let obj = self.obj();
+                let w = obj.upcast_ref::<gtk::ApplicationWindow>();
+                if let Some(title) = w.title() {
+                    title_label.set_label(&title);
+                }
+
+                subtitle_label
+            });
+
+            subtitle_label.set_label(subtitle);
+        }
+
         fn select(&self, path: &[i32]) {
             match self.file_contents.borrow().as_ref() {
                 None => {}
@@ -107,16 +155,23 @@ mod imp {
         }
 
         fn selected(&self, sel: Selection) {
-            println!("selected something!");
+            let html = match sel {
+                Selection::Patch(p) => {
+                    generate_html(p)
+                }
+                _ => "".into()
+            };
+            self.webview.get().unwrap().load_html(&html, None);
         }
 
-        fn loaded(&self, file: File) {
+        fn loaded(&self, file: File, path: String) {
             self.file_contents.replace(Some(file));
             let m = self.tree_view.model().unwrap().dynamic_cast::<gtk4::TreeStore>().unwrap();
             m.clear();
 
             let file = self.file_contents.borrow();
-            println!("Loaded...");
+            self.set_subtitle(&path);
+
             match file.as_ref().unwrap() {
                 File::Patch(p) => {
                     let name = &p.patch.target_device.name;
@@ -124,6 +179,10 @@ mod imp {
                         None, None,
                         &[(0, &0), (1, &name)]
                     );
+                    // When it is only one patch, select it right away
+                    let path = gtk4::TreePath::from_string("0").unwrap();
+                    self.tree_view.selection().select_path(&path);
+                    self.selected(Selection::Patch(&p));
                 }
                 File::Bundle(b) => {
                     for bank in &b.banks {
@@ -145,7 +204,7 @@ mod imp {
             }
         }
 
-        async fn open_file_dialog(&self) -> Result<File> {
+        async fn open_file_dialog(&self) -> Result<(File, String)> {
             let filter = gtk4::FileFilter::new();
             filter.set_name(Some("All supported formats (L6T, L6B, L6C)"));
             filter.add_pattern("*.l6t");
@@ -165,7 +224,12 @@ mod imp {
 
             match dialog.open_future(Some(self.obj().upcast_ref::<gtk4::Window>())).await {
                 Ok(f) => {
-                    load_file(f)
+                    let path = f.path()
+                        .map(|p| p.to_str().unwrap().to_string())
+                        .unwrap_or_default();
+                    load_file(f).map(|contents| {
+                        (contents, path)
+                    })
                 }
                 Err(e) => {
                     bail!("Failed to load file: {e}");

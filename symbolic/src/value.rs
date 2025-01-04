@@ -5,6 +5,7 @@ use file::model::{L6Patch, Model, ModelParam, Value as L6Value};
 use crate::model::{DataModel, Param, ParamType, Slot};
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Value {
     Bool(bool),
     Int(u32),

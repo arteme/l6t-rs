@@ -2,7 +2,5 @@
 <!DOCTYPE cambalache-project SYSTEM "cambalache-project.dtd">
 <cambalache-project version="0.95.0" target_tk="gtk-4.0">
   <ui template-class="FileInfoWidget" filename="fileinfo.ui" sha256="3487ddc228f9c60970aecc445834ab66bc6a976ce78c6da18720664282d81877"/>
-  <ui template-class="AppWindow" filename="appwindow.ui" sha256="aa98e1bab8e9b0f9232093b08d033b5ebdf9f1ccb1bee1534f98be61fd7476b4">
-    <requires>FileInfoWidget</requires>
-  </ui>
+  <ui template-class="AppWindow" filename="appwindow.ui" sha256="da36e4798159c6ff8385640cb3d36dbf5cd4f3d5bb9455e7e8fbf35d815136c6"/>
 </cambalache-project>

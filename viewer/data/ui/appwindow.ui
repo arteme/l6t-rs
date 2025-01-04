@@ -4,48 +4,46 @@
   <!-- interface-name appwindow.ui -->
   <requires lib="gtk" version="4.6"/>
   <template class="AppWindow" parent="GtkApplicationWindow">
+    <property name="height-request">400</property>
+    <property name="title">L6T Viewer</property>
     <property name="titlebar">
-      <object class="GtkHeaderBar"/>
+      <object class="GtkHeaderBar" id="header_bar">
+        <child>
+          <object class="GtkButton" id="open_file_button">
+            <property name="action-name">win.open</property>
+            <property name="can-focus">False</property>
+            <property name="focus-on-click">False</property>
+            <property name="focusable">False</property>
+            <property name="icon-name">document-open</property>
+          </object>
+        </child>
+      </object>
     </property>
+    <property name="width-request">600</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
         <property name="spacing">10</property>
+        <property name="vexpand">True</property>
+        <property name="vexpand-set">True</property>
         <child>
           <object class="GtkBox">
-            <property name="spacing">5</property>
-            <child>
-              <object class="GtkLabel">
-                <property name="label">File :</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="open_file_button">
-                <property name="action-name">win.open</property>
-                <property name="hexpand">True</property>
-                <property name="icon-name">document-open</property>
-                <property name="label">Open File</property>
-              </object>
-            </child>
-          </object>
-        </child>
-        <child>
-          <object class="GtkBox">
+            <property name="spacing">10</property>
             <child>
               <object class="GtkScrolledWindow">
-                <property name="hexpand">True</property>
-                <property name="hexpand-set">True</property>
                 <property name="width-request">200</property>
                 <child>
-                  <object class="GtkTreeView" id="tree_view">
-                    <property name="hexpand">True</property>
-                    <property name="hexpand-set">True</property>
-                  </object>
+                  <object class="GtkTreeView" id="tree_view"/>
                 </child>
               </object>
             </child>
             <child>
-              <object class="FileInfoWidget"/>
+              <object class="GtkScrolledWindow" id="webview_parent">
+                <property name="hexpand">True</property>
+                <property name="hexpand-set">True</property>
+                <property name="vexpand">True</property>
+                <property name="vexpand-set">True</property>
+              </object>
             </child>
           </object>
         </child>

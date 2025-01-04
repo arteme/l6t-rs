@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct TargetDevice {
     pub midi_id: u32,
     pub name: String,
@@ -8,6 +9,7 @@ pub struct TargetDevice {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct Model {
     pub model_id: u32,
     pub slot_id: u32,
@@ -25,18 +27,21 @@ impl PartialEq for Model {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ModelParam {
     pub param_id: u32,
     pub value: Value
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Value {
     Int(u32),
     Float(f32)
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MetaTags {
     pub author: String,
     pub guitarist: String,
@@ -53,6 +58,7 @@ pub struct MetaTags {
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum PatchType {
     #[default]
     Patch,
@@ -61,6 +67,7 @@ pub enum PatchType {
 }
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct L6Patch {
     pub patch_type: PatchType,
     pub target_device: TargetDevice,
@@ -69,6 +76,7 @@ pub struct L6Patch {
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum BundleType {
     #[default]
     Bundle,
@@ -76,6 +84,7 @@ pub enum BundleType {
 }
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct L6Bundle {
     pub bundle_type: BundleType,
     pub banks: Vec<Bank>
@@ -86,6 +95,7 @@ pub(crate) struct BatchHead {
 }
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct Bank {
     pub name: String,
     pub patches: Vec<L6Patch>

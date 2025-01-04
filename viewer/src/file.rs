@@ -1,9 +1,12 @@
 use l6t::model::L6Patch;
-use l6t::symbolic::value::ValueMap;
+use l6t::symbolic::rich::RichValueGroup;
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct Patch {
     pub patch: L6Patch,
-    pub values: ValueMap,
+    pub values: Vec<RichValueGroup>,
+    pub errors: Vec<String>
 }
 
 pub struct Bank {

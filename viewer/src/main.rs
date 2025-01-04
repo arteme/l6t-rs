@@ -9,6 +9,7 @@ mod app;
 mod file;
 mod loading;
 mod prelude;
+mod html;
 
 #[tokio::main]
 async fn main() -> Result<()> {

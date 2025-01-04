@@ -12,3 +12,4 @@ description = "A part of l6t library: reading, writing and deconding for L6T IFF
 
 [dependencies]
 thiserror = "1"
+serde = { workspace = true , optional = true }

@@ -4,6 +4,7 @@ use crate::model::{DataModel, get_name};
 use crate::value;
 use crate::value::Value;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct ValueGroup<V = Value> {
     pub name: String,
     pub values: Vec<(String, V)>

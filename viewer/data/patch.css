@@ -1,0 +1,12 @@
+div.values {
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+div.value {
+    font-weight: bold;
+}
+h1 {
+    font-size: 1.875em;
+    width: 100%;
+    border-bottom: solid 1px black;
+}

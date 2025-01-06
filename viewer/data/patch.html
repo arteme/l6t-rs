@@ -23,9 +23,13 @@
       {{ name_value("band", patch.meta.band) }}
       {{ name_value("song", patch.meta.song) }}
       {{ name_value("style", patch.meta.style) }}
-      {{ name_value("pickup", patch.meta.pickup_position ~ ' - ' ~ patch.meta.pickup_style) }}
+      {% if patch.meta.pickup_position or patch.meta.pickup_style %}
+        {{ name_value("pickup", patch.meta.pickup_position ~ ' - ' ~ patch.meta.pickup_style) }}
+      {% endif %}
       {{ name_value("amp", patch.meta.amp_name) }}
-      {{ name_value("app", patch.meta.creator_app ~ ' ' ~ patch.meta.creator_app_version) }}
+      {% if patch.meta.creator_app or patch.meta.creator_app_version %}
+        {{ name_value("app", patch.meta.creator_app ~ ' ' ~ patch.meta.creator_app_version) }}
+      {% endif %}
       {{ name_value("comments", patch.meta.comments) }}
     </div>
   </article>

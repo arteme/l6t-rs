@@ -1,3 +1,4 @@
+use std::cell::Ref;
 use l6t::model::L6Patch;
 use l6t::symbolic::rich::RichValueGroup;
 use serde::Serialize;
@@ -25,6 +26,6 @@ pub enum File {
 
 pub enum Selection<'a> {
     None,
-    Patch(&'a Patch),
-    Bank(&'a Bank),
+    Patch(Ref<'a, Patch>),
+    Bank(Ref<'a, Bank>),
 }

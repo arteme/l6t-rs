@@ -1,14 +1,14 @@
 use anyhow::*;
 use gtk4::gio;
 use gtk4::gio::Cancellable;
-use gtk4::prelude::{FileExt, InputStreamExtManual};
+use gtk4::prelude::FileExt;
 use log::warn;
 use l6t::decoder::{Decoder, DecoderResult};
 use l6t::model::L6Patch;
 use l6t::symbolic::data::data_model_by_id;
 use l6t::symbolic::group::group_values;
 use l6t::symbolic::rich::enrich_values;
-use l6t::symbolic::value::{read_values, ValueMap};
+use l6t::symbolic::value::read_values;
 use crate::file::{Bank, Bundle, File, Patch};
 
 pub fn load_file(file: gio::File) -> Result<File> {

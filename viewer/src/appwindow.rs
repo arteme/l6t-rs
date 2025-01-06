@@ -21,6 +21,7 @@ mod imp {
     use crate::file::{File, Selection};
     use crate::html::{generate_empty, generate_html};
     use crate::loading::load_file;
+    use crate::util::ref_remap;
 
     #[derive(Default, CompositeTemplate)]
     #[template(resource = "/io/github/arteme/l6t-rs/viewer/ui/appwindow.ui")]
@@ -43,12 +44,9 @@ mod imp {
         fn init(&self) {
             self.init_actions();
             self.init_tree_view();
+            self.init_webview();
 
-            let webview = webkit6::WebView::builder().build();
-            self.webview_parent.get().set_child(Some(&webview));
-            self.webview.set(webview).ok();
-
-            self.webview.get().unwrap().load_html(&generate_empty(), None);
+            self.webview.get().unwrap().load_uri("empty://")
         }
 
         fn init_actions(&self) {
@@ -95,11 +93,53 @@ mod imp {
             tree_view.connect_row_activated(glib::clone!(
                 #[weak(rename_to=w)]
                 self,
-                move |tree_view, path, column| {
+                move |_tree_view, path, _column| {
                     let path = path.indices();
                     w.select(&path);
                 }
             ));
+        }
+
+        fn init_webview(&self) {
+            let settings = webkit6::Settings::builder()
+                .enable_developer_extras(true)
+                .build();
+
+            let webview = webkit6::WebView::builder()
+                .settings(&settings)
+                .build();
+
+            let context = webkit6::WebContext::default().unwrap();
+            context.register_uri_scheme("empty", |req| {
+                let page = generate_empty();
+                let bytes = glib::Bytes::from_owned(page);
+                let is = gio::MemoryInputStream::from_bytes(&bytes);
+                req.finish(&is, bytes.len() as i64, Some("text/html"));
+            });
+            context.register_uri_scheme("patch", glib::clone!(
+                #[weak(rename_to=w)]
+                self,
+                move |req| {
+                    let uri = req.uri().unwrap();
+                    let after_method = uri.split("//").skip(1).next().unwrap();
+                    let selection = after_method.split("/").into_iter()
+                        .map(|v| v.parse::<i32>().unwrap_or(-1))
+                        .collect::<Vec<_>>();
+                    let selection = w.get_patch(&selection);
+                    let page = match selection {
+                        Selection::Patch(p) => { generate_html(&p) }
+                        //Selection::Bank(_) => {}
+                        _ => "".into()
+                    };
+                    let bytes = glib::Bytes::from_owned(page);
+                    let is = gio::MemoryInputStream::from_bytes(&bytes);
+                    req.finish(&is, bytes.len() as i64, Some("text/html"));
+                }
+            ));
+
+
+            self.webview_parent.set_child(Some(&webview));
+            self.webview.set(webview).ok();
         }
 
         fn set_subtitle(&self, subtitle: &str) {
@@ -130,38 +170,36 @@ mod imp {
         }
 
         fn select(&self, path: &[i32]) {
-            match self.file_contents.borrow().as_ref() {
-                None => {}
-                Some(File::Patch(p)) => {
-                    self.selected(Selection::Patch(p));
-                    return;
+            let uri = format!("patch://{}", itertools::join(path, "/"));
+            self.webview.get().unwrap().load_uri(&uri);
+        }
+
+        fn get_patch(&self, path: &[i32]) -> Selection {
+            let file_contents = self.file_contents.borrow();
+
+            match file_contents.as_ref() {
+                None => {
+                    return Selection::None;
+                }
+                Some(File::Patch(patch)) => {
+                    let patch = ref_remap(&file_contents, patch);
+                    return Selection::Patch(patch);
                 }
                 Some(File::Bundle(b)) => {
                     let Some(bank) = b.banks.get(path[0] as usize) else {
-                        self.selected(Selection::None);
-                        return;
+                        return Selection::None;
                     };
                     if path.len() == 1 {
-                        self.selected(Selection::Bank(bank));
-                        return;
+                        let bank = ref_remap(&file_contents, bank);
+                        return Selection::Bank(bank);
                     }
                     let Some(patch) = bank.patches.get(path[1] as usize) else {
-                        self.selected(Selection::None);
-                        return;
+                        return Selection::None;
                     };
-                    self.selected(Selection::Patch(patch));
+                    let patch = ref_remap(&file_contents, patch);
+                    return Selection::Patch(patch);
                 }
             }
-        }
-
-        fn selected(&self, sel: Selection) {
-            let html = match sel {
-                Selection::Patch(p) => {
-                    generate_html(p)
-                }
-                _ => "".into()
-            };
-            self.webview.get().unwrap().load_html(&html, None);
         }
 
         fn loaded(&self, file: File, path: String) {
@@ -182,7 +220,7 @@ mod imp {
                     // When it is only one patch, select it right away
                     let path = gtk4::TreePath::from_string("0").unwrap();
                     self.tree_view.selection().select_path(&path);
-                    self.selected(Selection::Patch(&p));
+                    self.select(&[0]);
                 }
                 File::Bundle(b) => {
                     for bank in &b.banks {
@@ -269,8 +307,5 @@ impl AppWindow {
         glib::Object::builder()
             .property("application", app)
             .build()
-    }
-
-    pub fn init(&self) {
     }
 }

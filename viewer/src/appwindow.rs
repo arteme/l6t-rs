@@ -131,11 +131,20 @@ mod imp {
             let settings = webkit6::Settings::builder()
                 .enable_developer_extras(true)
                 .build();
-
             let webview = webkit6::WebView::builder()
                 .settings(&settings)
                 .build();
             webview.set_background_color(&gdk::RGBA::new(0.0, 0.0, 0.0, 0.0));
+
+            // Remove drop target from the webview widget
+            let controllers = webview.observe_controllers();
+            let drop_target  = controllers.iter::<glib::Object>()
+                .flat_map(|obj| obj.ok())
+                .find(|obj| obj.is::<gtk4::DropTargetAsync>());
+            if let Some(drop_target) = drop_target {
+                let drop_target = drop_target.dynamic_cast_ref::<gtk4::DropTargetAsync>().unwrap();
+                webview.remove_controller(drop_target);
+            }
 
             let context = webkit6::WebContext::default().unwrap();
             context.register_uri_scheme("empty", |req| {
@@ -300,6 +309,8 @@ mod imp {
                             );
                         }
                     }
+
+                    self.select(&[]);
                 }
             }
         }

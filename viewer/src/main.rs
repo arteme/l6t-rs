@@ -22,6 +22,11 @@ pub fn resource(path: &str) -> String {
 
 
 fn main() -> Result<()> {
+    simple_logger::SimpleLogger::new()
+        .with_level(LevelFilter::Trace)
+        .env()
+        .init()?;
+
     gio::resources_register_include!("compiled.gresource")
         .context("Failed to register compiled gresource")?;
 

@@ -18,6 +18,7 @@ minijinja = "2.5.0"
 l6t = { version = "0", path = "../lib", features = ["serde"]  }
 log = { version = "0.4.22", features = [] }
 serde = { workspace = true }
+simple_logger = "5.0.0"
 
 
 [build-dependencies]

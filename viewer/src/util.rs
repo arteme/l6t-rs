@@ -11,3 +11,9 @@ pub fn ref_remap<'a, T, U>(r: &Ref<'a, T>, v: &U) -> Ref<'a, U> {
     // SAFETY: r is borrowed and v is part of r
     Ref::map(r, |_| unsafe { &*v })
 }
+
+/// Given a URI in the form of `scheme://authority/path?...`, strip
+/// the scheme part, returning `authority/path?...`
+pub fn uri_after_scheme(uri: &str) -> &str {
+    uri.split("//").skip(1).next().unwrap()
+}

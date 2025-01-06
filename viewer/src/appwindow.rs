@@ -16,12 +16,14 @@ mod imp {
     use gio::ActionEntry;
     use gtk4::{CompositeTemplate, FileFilter};
     use gtk4::prelude::TreeViewExt;
-    use webkit6::gtk;
+    use webkit6::{gdk, gtk};
     use webkit6::prelude::WebViewExt;
     use crate::file::{File, Selection};
     use crate::html::{generate_empty, generate_html};
     use crate::loading::load_file;
-    use crate::util::ref_remap;
+    use crate::prelude::gio::InputStream;
+    use crate::resource;
+    use crate::util::{ref_remap, uri_after_scheme};
 
     #[derive(Default, CompositeTemplate)]
     #[template(resource = "/io/github/arteme/l6t-rs/viewer/ui/appwindow.ui")]
@@ -46,19 +48,44 @@ mod imp {
             self.init_tree_view();
             self.init_webview();
 
+            let drop_target = gtk4::DropTarget::builder()
+                .actions(gdk::DragAction::COPY)
+                .formats(&gdk::ContentFormats::for_type(gio::File::static_type()))
+                .build();
+
+            drop_target.connect_drop(glib::clone!(
+                #[weak(rename_to = w)] self,
+                #[upgrade_or] false,
+                move |_, drop, _, _ | {
+                    let mut accept = false;
+                    match drop.get::<gio::File>() {
+                        Ok(file) => {
+                            w.load(file);
+                            accept = true;
+                        }
+                        Err(e) => {
+                            error!("Failed to get drop: {}", e);
+                        }
+                    }
+                    accept
+                }
+            ));
+
+            let obj = self.obj();
+            obj.add_controller(drop_target);
+
             self.webview.get().unwrap().load_uri("empty://")
         }
 
         fn init_actions(&self) {
             let open_action = ActionEntry::builder("open")
                 .activate(clone!(
-                #[weak(rename_to=w)]
-                self,
+                #[weak(rename_to = w)] self,
                 move |_, _, _| {
                     glib::spawn_future_local(async move {
                         match w.open_file_dialog().await {
-                                Ok((f,n)) => {
-                                    w.loaded(f, n);
+                                Ok(file) => {
+                                    w.load(file);
                                 }
                                 Err(e) => {
                                     error!("File loading failed: {e}");
@@ -108,6 +135,7 @@ mod imp {
             let webview = webkit6::WebView::builder()
                 .settings(&settings)
                 .build();
+            webview.set_background_color(&gdk::RGBA::new(0.0, 0.0, 0.0, 0.0));
 
             let context = webkit6::WebContext::default().unwrap();
             context.register_uri_scheme("empty", |req| {
@@ -121,8 +149,7 @@ mod imp {
                 self,
                 move |req| {
                     let uri = req.uri().unwrap();
-                    let after_method = uri.split("//").skip(1).next().unwrap();
-                    let selection = after_method.split("/").into_iter()
+                    let selection = uri_after_scheme(&uri).split("/").into_iter()
                         .map(|v| v.parse::<i32>().unwrap_or(-1))
                         .collect::<Vec<_>>();
                     let selection = w.get_patch(&selection);
@@ -136,6 +163,27 @@ mod imp {
                     req.finish(&is, bytes.len() as i64, Some("text/html"));
                 }
             ));
+            context.register_uri_scheme("res", |req| {
+                let uri = req.uri().unwrap();
+                let path = uri_after_scheme(&uri);
+                let path = resource(&path);
+                let is = gio::resources_open_stream(
+                    &path,
+                    gio::ResourceLookupFlags::NONE
+                );
+                match is {
+                    Ok(is) => {
+                        let (len, _) =
+                            gio::resources_get_info(&path, gio::ResourceLookupFlags::NONE).unwrap();
+                        req.finish(&is, len as i64, Some("text/html"));
+                    }
+                    Err(mut e) => {
+                        warn!("Failed to load {}: {}", &uri, &e);
+                        println!("Failed to load {}: {}", &uri, &e);
+                        req.finish_error(&mut e);
+                    }
+                }
+            });
 
 
             self.webview_parent.set_child(Some(&webview));
@@ -202,6 +250,20 @@ mod imp {
             }
         }
 
+        fn load(&self, file: gio::File) {
+            let path = file.path()
+                .map(|p| p.to_str().unwrap().to_string())
+                .unwrap_or_default();
+            match load_file(file) {
+                Ok(contents) => {
+                    self.loaded(contents, path);
+                }
+                Err(e) => {
+                    error!("Failed to load {}: {}", path, e);
+                }
+            }
+        }
+
         fn loaded(&self, file: File, path: String) {
             self.file_contents.replace(Some(file));
             let m = self.tree_view.model().unwrap().dynamic_cast::<gtk4::TreeStore>().unwrap();
@@ -242,7 +304,7 @@ mod imp {
             }
         }
 
-        async fn open_file_dialog(&self) -> Result<(File, String)> {
+        async fn open_file_dialog(&self) -> Result<gio::File> {
             let filter = gtk4::FileFilter::new();
             filter.set_name(Some("All supported formats (L6T, L6B, L6C)"));
             filter.add_pattern("*.l6t");
@@ -260,19 +322,8 @@ mod imp {
                 .default_filter(&filter)
                 .build();
 
-            match dialog.open_future(Some(self.obj().upcast_ref::<gtk4::Window>())).await {
-                Ok(f) => {
-                    let path = f.path()
-                        .map(|p| p.to_str().unwrap().to_string())
-                        .unwrap_or_default();
-                    load_file(f).map(|contents| {
-                        (contents, path)
-                    })
-                }
-                Err(e) => {
-                    bail!("Failed to load file: {e}");
-                }
-            }
+            dialog.open_future(Some(self.obj().upcast_ref::<gtk4::Window>())).await
+                .context("File open failed")
         }
     }
 

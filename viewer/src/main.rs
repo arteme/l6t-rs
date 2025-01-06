@@ -11,7 +11,7 @@ mod util;
 
 const APP_ID: &str = "io.github.arteme.l6t-rs.viewer";
 
-fn resource(path: &str) -> String {
+pub fn resource(path: &str) -> String {
     static BASE_PATH: OnceLock<String> = OnceLock::new();
     let base_path = BASE_PATH.get_or_init(|| {
         String::from("/") + &APP_ID.replace('.', "/") + "/"

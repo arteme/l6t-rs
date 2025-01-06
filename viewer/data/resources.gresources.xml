@@ -3,5 +3,7 @@
     <gresource prefix="/io/github/arteme/l6t-rs/viewer/">
         <file compressed="true" preprocess="xml-stripblanks">ui/fileinfo.ui</file>
         <file compressed="true" preprocess="xml-stripblanks">ui/appwindow.ui</file>
+        <file compressed="true">css/pico.css</file>
+        <file compressed="true">css/pico.colors.min.css</file>
     </gresource>
 </gresources>

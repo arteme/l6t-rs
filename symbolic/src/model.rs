@@ -52,6 +52,16 @@ pub enum Param {
     }
 }
 
+impl Param {
+    pub fn get_id(&self) -> Option<u32> {
+        match self {
+            Param::Param { param_id, .. } => Some(*param_id),
+            Param::IgnoreParam { param_id, .. } => Some(*param_id),
+            _ => None
+        }
+    }
+}
+
 pub fn get_name(param: &Param) -> Option<&String> {
     match param {
         Param::SlotModel { name, .. } => Some(name),

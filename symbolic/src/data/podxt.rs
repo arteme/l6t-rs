@@ -4,10 +4,10 @@ use std::sync::OnceLock;
 use maplit::{convert_args, hashmap};
 use crate::data::shorthand::*;
 use crate::data::models::filter_params_by_prefix;
-use crate::model::{DataModel, Group, Param, Slot};
+use crate::model::{DataModel, Group, Slot};
 
 
-fn amp_select() -> &'static HashMap<u32, String> {
+pub(super) fn amp_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -121,7 +121,7 @@ fn amp_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn cab_select() -> &'static HashMap<u32, String> {
+pub(super) fn cab_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -176,20 +176,20 @@ fn cab_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn mic_select() -> &'static HashMap<u32, String> {
+pub(super) fn mic_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
             // TODO: some way to separate these normal/BX values
             0 => "57 on axis / BX: tube 47 close",
-            1 => "57 off axis / BX: tube 74 far ",
+            1 => "57 off axis / BX: tube 47 far",
             2 => "421 dynamic / BX: 112 dynamic",
             3 => "67 condenser / BX: 20 dynamic"
         ))
     })
 }
 
-fn stomp_select() -> &'static HashMap<u32, String> {
+pub(super) fn stomp_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -222,21 +222,13 @@ fn stomp_select() -> &'static HashMap<u32, String> {
             26 => "FX-Synth String",
             27 => "Bass Overdrive",
             28 => "Bronze Master",
-            29 => "Sub Octaces",
+            29 => "Sub Octaves",
             30 => "Bender",
         ))
     })
 }
-/*
-fn mod_select() -> &'static HashMap<u32, String> {
-    static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
-    SELECT.get_or_init(|| {
-        convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
-        ))
-    })
-}
-*/
-fn mod_select() -> &'static HashMap<u32, String> {
+
+pub(super) fn mod_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -268,7 +260,7 @@ fn mod_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn note_select() -> &'static HashMap<u32, String> {
+pub(super) fn note_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -290,7 +282,7 @@ fn note_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn wave_value() -> &'static Vec<(u32, String)> {
+pub(super) fn wave_value() -> &'static Vec<(u32, String)> {
     static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
     MAP.get_or_init(|| {
         vec![
@@ -307,7 +299,7 @@ fn wave_value() -> &'static Vec<(u32, String)> {
     })
 }
 
-fn _1m335_value() -> &'static Vec<(u32, String)> {
+pub(super) fn _1m335_value() -> &'static Vec<(u32, String)> {
     static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
     MAP.get_or_init(|| {
         vec![
@@ -325,7 +317,7 @@ fn _1m335_value() -> &'static Vec<(u32, String)> {
     })
 }
 
-fn _1457_value() -> &'static Vec<(u32, String)> {
+pub(super) fn _1457_value() -> &'static Vec<(u32, String)> {
     static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
     MAP.get_or_init(|| {
         vec![
@@ -419,7 +411,7 @@ fn wah_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn pedal_assign_select() -> &'static HashMap<u32, String> {
+pub(super) fn pedal_assign_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -430,7 +422,7 @@ fn pedal_assign_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn footswitch_mode_select() -> &'static HashMap<u32, String> {
+pub(super) fn footswitch_mode_select() -> &'static HashMap<u32, String> {
     static SELECT: OnceLock<HashMap<u32, String>> = OnceLock::new();
     SELECT.get_or_init(|| {
         convert_args!(keys=identity::<u32>, values=String::from, hashmap!(
@@ -440,7 +432,7 @@ fn footswitch_mode_select() -> &'static HashMap<u32, String> {
     })
 }
 
-fn heads_value() -> &'static Vec<(u32, String)> {
+pub(super) fn heads_value() -> &'static Vec<(u32, String)> {
     static MAP: OnceLock<Vec<(u32, String)>> = OnceLock::new();
     MAP.get_or_init(|| {
         vec![
@@ -476,7 +468,7 @@ fn bits_value() -> &'static Vec<(u32, String)> {
     })
 }
 
-fn stomp_slot(select: u32, model: u32, params: &[Option<&str>; 5]) -> Slot {
+pub(super) fn stomp_slot(select: u32, model: u32, params: &[Option<&str>; 5]) -> Slot {
     let param = |i: usize, id| {
         params[i].map(|n| float(id, n)).unwrap_or_else(|| ignore(id))
     };
@@ -498,7 +490,9 @@ fn stomp_slot(select: u32, model: u32, params: &[Option<&str>; 5]) -> Slot {
     }
 }
 
-fn mod_slot(select: u32, model: u32, params: &[Option<&str>; 4]) -> Slot {
+// PODxt Only uses the 4-param version, but other PODxt derivatives
+// like Bass PODxt may use this 5-param version
+pub(super) fn mod_slot5(select: u32, model: u32, params: &[Option<&str>; 5]) -> Slot {
     let param = |i: usize, id| {
         params[i].map(|n| float(id, n)).unwrap_or_else(|| ignore(id))
     };
@@ -517,12 +511,18 @@ fn mod_slot(select: u32, model: u32, params: &[Option<&str>; 4]) -> Slot {
             param(0, 0x100001), // param 1
             param(1, 0x100002), // param 2
             param(2, 0x100003), // param 3
-            ignore(0x100004),
-            param(3, 0x010001), // param 4
+            param(3, 0x100004), // param 4
+            param(4, 0x010001), // param 5
             ignore_f(0x010002),
             int(0x200000, "mod_note_select"),
         ]
     }
+}
+
+pub(super) fn mod_slot(select: u32, model: u32, params: &[Option<&str>; 4]) -> Slot {
+    // PODxt uses 4-parameter mod slots version of the 5-parameter generic
+    // mod slot, where param[4] is always ignores and param[5] is used instead
+    mod_slot5(select, model, &[params[0], params[1], params[2], None, params[3]])
 }
 
 fn delay_slot(select: u32, model: u32, params: &[Option<&str>; 4]) -> Slot {

@@ -17,6 +17,9 @@ serde = { workspace = true, optional = true }
 serde-map-to-array = { workspace = true, optional = true }
 maplit = "1.0.2"
 
+[dev-dependencies]
+regex = "1.11.1"
+
 [features]
 default = []
 serde = [ "dep:serde", "dep:serde-map-to-array" ]

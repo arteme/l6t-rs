@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use file::model::L6Patch;
-use crate::model::{DataModel, get_name};
+use crate::model::DataModel;
 use crate::value;
 use crate::value::Value;
 
@@ -25,7 +25,7 @@ pub fn group_values<V: Clone>(patch: &L6Patch, values: &HashMap<String, V>, mode
             }
 
             for param in &slot.params {
-                let Some(name) = get_name(param) else { continue };
+                let Some(name) = param.get_name() else { continue };
                 if seen_names.contains(name) { continue }
                 // We allow values to contain only a portion of props defined in
                 // the slot. "read_values" would have reported missing props errors,

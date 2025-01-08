@@ -5,14 +5,14 @@ use crate::data::floorpod::*;
 use crate::data::pocketpod::*;
 use crate::data::pod2::*;
 use crate::data::podxt::*;
-use crate::model::{DataModel, get_name, Group, Param, Slot};
+use crate::model::{DataModel, Group, Param, Slot};
 
 pub struct DataModelInfo {
     pub name: &'static str,
     pub model: &'static DataModel
 }
 
-fn data_models() -> &'static HashMap<u32, DataModelInfo> {
+pub(crate) fn data_models() -> &'static HashMap<u32, DataModelInfo> {
     static MODELS: OnceLock<HashMap<u32, DataModelInfo>> = OnceLock::new();
     MODELS.get_or_init(||
         HashMap::from([
@@ -89,21 +89,13 @@ pub fn data_model_by_num(num: usize) -> Option<&'static DataModel> {
         .and_then(|key| data_model_by_id(*key))
 }
 
-pub fn filter_params<F>(model: &DataModel, filter_fn: F) -> DataModel
+pub fn filter_groups<F>(groups: &Vec<Group>, filter_fn: F) -> Vec<Group>
     where F: Fn(&Param) -> Option<Param>
 {
-    let mut name_change = HashMap::new();
-    let groups = model.groups.iter().map(|g| {
+    groups.iter().map(|g| {
         let slots = g.slots.iter().map(|s| {
             let params = s.params.iter().map(|p| {
-                let new_param = filter_fn(p).unwrap_or(p.clone());
-                // TODO: rust 1.85 replace with a if-let chain
-                if let Some(old_name) = get_name(p).cloned() {
-                    if let Some(new_name) = get_name(&new_param).cloned() {
-                        name_change.insert(old_name, new_name);
-                    }
-                }
-                new_param
+                filter_fn(p).unwrap_or(p.clone())
             });
 
             Slot {
@@ -118,17 +110,7 @@ pub fn filter_params<F>(model: &DataModel, filter_fn: F) -> DataModel
             name: g.name.clone(),
             slots: slots.collect()
         }
-    }).collect();
-
-    let info_map = model.info_map.iter().flat_map(|(k,v)| {
-        name_change.get(k).map(|k| (k.clone(), v.clone()))
-    }).collect();
-
-    DataModel {
-        floats_as_ints: model.floats_as_ints,
-        groups,
-        info_map
-    }
+    }).collect()
 }
 
 pub fn filter_params_by_prefix(model: &DataModel,
@@ -147,8 +129,7 @@ pub fn filter_params_by_prefix(model: &DataModel,
         name.to_string()
     };
 
-
-    filter_params(model, |p| match p {
+    let groups = filter_groups(&model.groups, |p| match p {
         Param::SlotModel { name } if should_strip(name) => {
             Some(Param::SlotModel { name: strip_name(name) })
         }
@@ -179,5 +160,24 @@ pub fn filter_params_by_prefix(model: &DataModel,
         }
 
         _ => None
-    })
+    });
+
+    let info_map = model.info_map.iter().flat_map(|(key, value)| {
+        if should_remove(key) {
+            return None;
+        }
+        let key = if should_strip(key) {
+            strip_name(key)
+        } else {
+            key.clone()
+        };
+
+        Some((key, value.clone()))
+    }).collect();
+
+    DataModel {
+        floats_as_ints: model.floats_as_ints,
+        groups,
+        info_map
+    }
 }

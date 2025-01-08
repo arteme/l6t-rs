@@ -60,14 +60,15 @@ impl Param {
             _ => None
         }
     }
-}
 
-pub fn get_name(param: &Param) -> Option<&String> {
-    match param {
-        Param::SlotModel { name, .. } => Some(name),
-        Param::SlotEnable { name, .. } => Some(name),
-        Param::Param { name, .. } => Some(name),
-        Param::FixedParam { name, .. } => Some(name),
-        Param::IgnoreParam { .. } => None
+    pub fn get_name(&self) -> Option<&String> {
+        match self {
+            Param::SlotModel { name, .. } => Some(name),
+            Param::SlotEnable { name, .. } => Some(name),
+            Param::Param { name, .. } => Some(name),
+            Param::FixedParam { name, .. } => Some(name),
+            Param::IgnoreParam { .. } => None
+        }
     }
 }
+

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::identity;
 use std::sync::OnceLock;
 use maplit::{convert_args, hashmap};
-use crate::data::pod2::{reverb_type};
+use crate::data::pod2::{reverb_type, rotary_speed};
 use crate::data::shorthand::*;
 use crate::model::{DataModel, Group, Slot};
 
@@ -638,6 +638,12 @@ pub fn floorpod_data_model() -> &'static DataModel {
             "flanger_depth" => percent(),
             "flanger_feedback" => percent().convert(1.0/2.02, -1.01, -0.0).range(0.0, 1.0),
             "flanger_pre_delay" => percent().convert(1.0/25.0, 0.0, 0.0),
+            "trem_speed" => hz().range(0.33, 6.67),
+            "trem_depth" => percent(),
+            "rotary_speed" => lookup(rotary_speed()),
+            "rotary_fast_speed" => hz().range(0.36, 10.0),
+            "rotary_slow_speed" => hz().range(0.36, 10.0),
+            "rotary_depth" => percent(), //???
             "phaser_speed" => percent(),
             "phaser_depth" => percent(),
             "u_vibe_speed" => percent(),

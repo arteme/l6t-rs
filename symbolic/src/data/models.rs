@@ -19,43 +19,43 @@ pub(crate) fn data_models() -> &'static HashMap<u32, DataModelInfo> {
             // Line6 Edit sometimes creates L6T files with this identified,
             // assume it is the same as POD 2.0, although it is probably not...
             (0x000200, DataModelInfo {
-                name: "Flextone II model",
+                name: "Flextone II",
                 model: pod2_data_model(),
             }),
             (0x000300, DataModelInfo {
-                name: "POD 2.0 / POD Pro model",
+                name: "POD 2.0 / POD Pro",
                 model: pod2_data_model(),
             }),
             (0x030002, DataModelInfo {
-                name: "PODxt data model",
+                name: "PODxt",
                 model: podxt_data_model(),
             }),
             (0x030005, DataModelInfo {
-                name: "PODxt Pro data model",
+                name: "PODxt Pro",
                 model: podxt_pro_data_model(),
             }),
             (0x03000a, DataModelInfo {
-                name: "PODxt Live data model",
+                name: "PODxt Live",
                 model: podxt_live_data_model()
             }),
             (0x030006, DataModelInfo {
-                name: "Bass PODxt data model",
+                name: "Bass PODxt",
                 model: basspodxt_data_model(),
             }),
             (0x030007, DataModelInfo {
-                name: "Bass PODxt Pro data model",
+                name: "Bass PODxt Pro",
                 model: basspodxt_pro_data_model(),
             }),
             (0x03000b, DataModelInfo {
-                name: "Bass PODxt Live data model",
+                name: "Bass PODxt Live",
                 model: basspodxt_live_data_model(),
             }),
             (0x000500, DataModelInfo {
-                name: "Floor POD Plus model",
+                name: "Floor POD Plus",
                 model: floorpod_data_model(),
             }),
             (0x000600, DataModelInfo {
-                name: "Pocket POD model",
+                name: "Pocket POD",
                 model: pocketpod_data_model(),
             }),
         ])

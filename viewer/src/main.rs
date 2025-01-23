@@ -6,8 +6,11 @@ mod appwindow;
 mod file;
 mod loading;
 mod prelude;
-mod html;
 mod util;
+mod pages;
+mod group;
+mod page;
+mod model;
 
 const APP_ID: &str = "io.github.arteme.l6t-rs.viewer";
 
@@ -41,6 +44,9 @@ fn main() -> Result<()> {
     });
 
     app.connect_activate(|app| {
+        let theme = gtk4::IconTheme::default();
+        theme.add_resource_path(&resource("icons"));
+
         let w = AppWindow::new(app);
         w.present();
     });

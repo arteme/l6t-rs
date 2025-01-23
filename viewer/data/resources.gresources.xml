@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
     <gresource prefix="/io/github/arteme/l6t-rs/viewer/">
-        <file compressed="true" preprocess="xml-stripblanks">ui/fileinfo.ui</file>
         <file compressed="true" preprocess="xml-stripblanks">ui/appwindow.ui</file>
-        <file compressed="true">css/pico.css</file>
-        <file compressed="true">css/pico.colors.min.css</file>
+        <file compressed="true" preprocess="xml-stripblanks">ui/empty-page.ui</file>
+    </gresource>
+    <gresource prefix="/io/github/arteme/l6t-rs/viewer/icons/scalable/actions">
+        <file alias="empty-page-symbolic.svg">icons/empty-page.svg</file>
     </gresource>
 </gresources>

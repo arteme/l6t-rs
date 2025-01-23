@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Cambalache 0.95.0 -->
+<interface>
+  <requires lib="gtk" version="4.6"/>
+  <object class="GtkCenterBox" id="empty_page_widget">
+    <child type="center">
+      <object class="GtkCenterBox">
+        <property name="orientation">vertical</property>
+        <child type="center">
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkImage">
+                <property name="icon-name">empty-page</property>
+                <property name="pixel-size">250</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="justify">center</property>
+                <property name="label">Nothing to see here yet.
+Please open a file to view...</property>
+                <property name="margin-top">40</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

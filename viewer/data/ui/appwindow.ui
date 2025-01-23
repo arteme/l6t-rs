@@ -2,9 +2,9 @@
 <!-- Created with Cambalache 0.95.0 -->
 <interface>
   <!-- interface-name appwindow.ui -->
-  <requires lib="gtk" version="4.6"/>
+  <requires lib="gtk" version="4.16"/>
   <template class="AppWindow" parent="GtkApplicationWindow">
-    <property name="height-request">400</property>
+    <property name="height-request">600</property>
     <property name="title">L6T Viewer</property>
     <property name="titlebar">
       <object class="GtkHeaderBar" id="header_bar">
@@ -19,7 +19,7 @@
         </child>
       </object>
     </property>
-    <property name="width-request">600</property>
+    <property name="width-request">800</property>
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>

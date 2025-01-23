@@ -1,9 +1,7 @@
 use std::cell::Ref;
 use l6t::model::L6Patch;
 use l6t::symbolic::rich::RichValueGroup;
-use serde::Serialize;
 
-#[derive(Serialize)]
 pub struct Patch {
     pub patch: L6Patch,
     pub values: Vec<RichValueGroup>,

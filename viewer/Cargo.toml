@@ -12,14 +12,10 @@ homepage.workspace = true
 
 anyhow = "1.0.95"
 itertools = "0.14.0"
-gtk4 = { version = "0.9.5", features = ["v4_16"] }
-webkit6 = "0.4.0"
-minijinja = "2.5.0"
-l6t = { version = "0", path = "../lib", features = ["serde"]  }
+gtk4 = { package = "gtk4", version = "0.9.5", features = ["v4_16"] }
+l6t = { version = "0", path = "../lib" }
 log = { version = "0.4.22", features = [] }
-serde = { workspace = true }
 simple_logger = "5.0.0"
-
 
 [build-dependencies]
 

@@ -14,12 +14,10 @@ mod imp {
     use super::*;
     use std::cell::{OnceCell, RefCell};
     use gio::ActionEntry;
-    use gtk4::{CompositeTemplate, FileFilter};
+    use gtk4::{CompositeTemplate, FileFilter, gdk};
     use gtk4::prelude::TreeViewExt;
-    use webkit6::{gdk, gtk};
-    use webkit6::prelude::WebViewExt;
+    use crate::pages::{empty_page, patch_page};
     use crate::file::{File, Selection};
-    use crate::html::{generate_empty, generate_html};
     use crate::loading::load_file;
     use crate::prelude::gio::InputStream;
     use crate::resource;
@@ -29,7 +27,6 @@ mod imp {
     #[template(resource = "/io/github/arteme/l6t-rs/viewer/ui/appwindow.ui")]
     pub struct AppWindow {
         file_contents: RefCell<Option<File>>,
-        webview: OnceCell<webkit6::WebView>,
         subtitle_label: OnceCell<gtk4::Label>,
 
         #[template_child]
@@ -46,7 +43,7 @@ mod imp {
         fn init(&self) {
             self.init_actions();
             self.init_tree_view();
-            self.init_webview();
+            //self.init_webview();
 
             let drop_target = gtk4::DropTarget::builder()
                 .actions(gdk::DragAction::COPY)
@@ -74,7 +71,7 @@ mod imp {
             let obj = self.obj();
             obj.add_controller(drop_target);
 
-            self.webview.get().unwrap().load_uri("empty://")
+            self.webview_parent.get().set_child(Some(&empty_page()));
         }
 
         fn init_actions(&self) {
@@ -127,87 +124,15 @@ mod imp {
             ));
         }
 
-        fn init_webview(&self) {
-            let settings = webkit6::Settings::builder()
-                .enable_developer_extras(true)
-                .build();
-            let webview = webkit6::WebView::builder()
-                .settings(&settings)
-                .build();
-            webview.set_background_color(&gdk::RGBA::new(0.0, 0.0, 0.0, 0.0));
-
-            // Remove drop target from the webview widget
-            let controllers = webview.observe_controllers();
-            let drop_target  = controllers.iter::<glib::Object>()
-                .flat_map(|obj| obj.ok())
-                .find(|obj| obj.is::<gtk4::DropTargetAsync>());
-            if let Some(drop_target) = drop_target {
-                let drop_target = drop_target.dynamic_cast_ref::<gtk4::DropTargetAsync>().unwrap();
-                webview.remove_controller(drop_target);
-            }
-
-            let context = webkit6::WebContext::default().unwrap();
-            context.register_uri_scheme("empty", |req| {
-                let page = generate_empty();
-                let bytes = glib::Bytes::from_owned(page);
-                let is = gio::MemoryInputStream::from_bytes(&bytes);
-                req.finish(&is, bytes.len() as i64, Some("text/html"));
-            });
-            context.register_uri_scheme("patch", glib::clone!(
-                #[weak(rename_to=w)]
-                self,
-                move |req| {
-                    let uri = req.uri().unwrap();
-                    let selection = uri_after_scheme(&uri).split("/").into_iter()
-                        .map(|v| v.parse::<i32>().unwrap_or(-1))
-                        .collect::<Vec<_>>();
-                    let selection = w.get_patch(&selection);
-                    let page = match selection {
-                        Selection::Patch(p) => { generate_html(&p) }
-                        //Selection::Bank(_) => {}
-                        _ => "".into()
-                    };
-                    let bytes = glib::Bytes::from_owned(page);
-                    let is = gio::MemoryInputStream::from_bytes(&bytes);
-                    req.finish(&is, bytes.len() as i64, Some("text/html"));
-                }
-            ));
-            context.register_uri_scheme("res", |req| {
-                let uri = req.uri().unwrap();
-                let path = uri_after_scheme(&uri);
-                let path = resource(&path);
-                let is = gio::resources_open_stream(
-                    &path,
-                    gio::ResourceLookupFlags::NONE
-                );
-                match is {
-                    Ok(is) => {
-                        let (len, _) =
-                            gio::resources_get_info(&path, gio::ResourceLookupFlags::NONE).unwrap();
-                        req.finish(&is, len as i64, Some("text/html"));
-                    }
-                    Err(mut e) => {
-                        warn!("Failed to load {}: {}", &uri, &e);
-                        println!("Failed to load {}: {}", &uri, &e);
-                        req.finish_error(&mut e);
-                    }
-                }
-            });
-
-
-            self.webview_parent.set_child(Some(&webview));
-            self.webview.set(webview).ok();
-        }
-
         fn set_subtitle(&self, subtitle: &str) {
             let subtitle_label = self.subtitle_label.get_or_init(|| {
                 let title_box = gtk4::Box::builder()
                     .orientation(gtk4::Orientation::Vertical)
                     .build();
-                let title_label = gtk::Label::builder()
+                let title_label = gtk4::Label::builder()
                     .css_classes(["title"])
                     .build();
-                let subtitle_label = gtk::Label::builder()
+                let subtitle_label = gtk4::Label::builder()
                     .css_classes(["subtitle"])
                     .build();
                 title_box.append(&title_label);
@@ -215,7 +140,7 @@ mod imp {
                 self.header_bar.set_title_widget(Some(&title_box));
 
                 let obj = self.obj();
-                let w = obj.upcast_ref::<gtk::ApplicationWindow>();
+                let w = obj.upcast_ref::<gtk4::ApplicationWindow>();
                 if let Some(title) = w.title() {
                     title_label.set_label(&title);
                 }
@@ -227,8 +152,11 @@ mod imp {
         }
 
         fn select(&self, path: &[i32]) {
-            let uri = format!("patch://{}", itertools::join(path, "/"));
-            self.webview.get().unwrap().load_uri(&uri);
+            let w = match self.get_patch(path) {
+                Selection::Patch(p) => patch_page(&p),
+                _ => gtk4::Box::builder().build().upcast(),
+            };
+            self.webview_parent.get().set_child(Some(&w));
         }
 
         fn get_patch(&self, path: &[i32]) -> Selection {
